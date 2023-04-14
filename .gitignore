@@ -1,2 +1,5 @@
 .DS_Store
 data/raw
+data/clean
+.env
+__pycache__
