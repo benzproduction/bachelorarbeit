@@ -102,39 +102,3 @@ def clean_text(text):
     text = text.replace('SECTION-HEADER', '<SECTION-HEADER>')
 
     return text
-
-
-if __name__ == '__main__':
-
-
-    prefix = os.environ['BILLSUM_PREFIX']
-    path = os.path.join(prefix, 'data_final')
-
-    # Create dir where data should be saved
-    save_path = os.path.join(prefix, 'clean_final')
-    #os.mkdir(save_path)
-
-    for file in os.listdir(path):
-        if '.jsonl' not in file:
-            continue
-
-
-        file_path = os.path.join(path,  file)
-
-        print("Now processing", file_path)
-
-        data = pd.read_json(file_path, lines=True)
-
-        data['clean_text'] = data.text.map(clean_text)
-        
-        data['clean_summary'] = data.summary.map(clean_text)
-
-        data['clean_title'] = data.title.map(clean_text)
-
-        save_path = os.path.join(prefix, 'clean_final', file)
-
-        data.to_json(save_path, lines=True, orient='records')
-
-
-
-
