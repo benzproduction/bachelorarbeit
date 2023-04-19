@@ -1,11 +1,35 @@
-"""
-A module for storing text-preprocessing functionality.
-Resposible for cleaning up the  unnecessary characters/noise from text
-"""
+###########################################################################################
+# Script to store txt documents in one csv file (tab seperated) with 2 cols (title, text) #
+###########################################################################################
+
 import os
 import pandas as pd
+from tqdm import tqdm
 import re
 
+output_path = os.path.join(os.path.dirname(__file__), "clean", "csv", "real_estate_dataset.csv")
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+input_dir = os.path.join(os.path.dirname(__file__), "raw", "real_estate_txts")
+
+txt_files = os.listdir(input_dir)
+
+data = []
+for txt_file in tqdm(txt_files):
+    txt_path = os.path.join(input_dir, txt_file)
+    tqdm.write(f"Processing {txt_file}")
+
+    try:
+        with open(txt_path, "r") as f:
+            text = f.read()
+        data.append({"title": txt_file, "text": text})
+    except Exception as e:
+        tqdm.write(f"Error processing {txt_file}: {e}")
+        continue
+
+df = pd.DataFrame(data)
+
+# clean the text
 def replace_semicolon(text, threshold=10):
     '''
     Get rid of semicolons.
@@ -86,3 +110,9 @@ def clean_text(text):
     text = text.encode('ascii', 'ignore').decode('ascii')
 
     return text
+
+df['text'] = df['text'].apply(clean_text)
+# remove the .txt from the title col
+df['title'] = df['title'].apply(lambda x: x.replace(".txt", ""))
+
+df.to_csv(output_path, sep="\t", index=False)

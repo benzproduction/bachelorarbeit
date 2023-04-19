@@ -84,5 +84,28 @@ def get_redis_results(redis_conn,query,index_name):
         
     # Display result as a DataFrame for ease of us
     result_df = pd.DataFrame(query_result_list)
-    result_df.columns = ['id','result','certainty']
+    result_df.columns = ['id','result','certainty',]
+    return result_df
+
+def get_redis_results2(redis_conn,query,index_name):
+    
+    # Get most relevant documents from Redis
+    query_result = query_redis(redis_conn,query,index_name)
+    # if the result is empty, return an empty dataframe
+    if query_result.total == 0:
+        return pd.DataFrame()
+    
+    # Extract info into a list
+    query_result_list = []
+    for i, result in enumerate(query_result.docs):
+        print(result)
+        result_order = i
+        text = result.text_chunk
+        score = result.vector_score
+        filename = result.id
+        query_result_list.append((result_order,text,score, filename))
+        
+    # Display result as a DataFrame for ease of us
+    result_df = pd.DataFrame(query_result_list)
+    result_df.columns = ['id','result','certainty', 'filename']
     return result_df

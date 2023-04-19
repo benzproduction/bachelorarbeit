@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 from helpers import get_env
-from database import get_redis_connection, get_redis_results
+from database import get_redis_connection, get_redis_results2
 from config import INDEX_NAME, COMPLETIONS_MODEL
 
 API_KEY, RESOURCE_ENDPOINT = get_env("azure-openai")
@@ -29,19 +29,52 @@ st.subheader("Search for any questions about the test documents you have")
 prompt = st.text_input("Enter your search here","", key="input")
 
 if st.button('Submit', key='generationSubmit'):
-    result_df = get_redis_results(client,prompt,INDEX_NAME)
-    
-    # Build a prompt to provide the original query, the result and ask to summarise for the user
-    summary_prompt = '''Summarise this result in a bulleted list to answer the search query a customer has sent.
-    Search query: SEARCH_QUERY_HERE
-    Search result: SEARCH_RESULT_HERE
-    Summary:
-    '''
-    summary_prepped = summary_prompt.replace('SEARCH_QUERY_HERE',prompt).replace('SEARCH_RESULT_HERE',result_df['result'][0])
-    summary = openai.Completion.create(engine=COMPLETIONS_MODEL,prompt=summary_prepped,max_tokens=500)
-    
-    # Response provided by GPT-3
-    st.write(summary['choices'][0]['text'])
+    result_df = get_redis_results2(client,prompt,INDEX_NAME)
+    # if the result_df is an empty dataframe, return a message to the user
+    if result_df.empty:
+        st.write("Beep Boop, I don't know the answer to that.")
+    else:
+        # Build a prompt to provide the original query, the result and ask to summarise for the user
+        summary_prompt = """<|im_start|>system \n
+You are helping an employee with general questions regarding a for them unknown knowledge base. Be brief in your answers.
+Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+For tabular information return it as an html table. Do not return markdown format.
+Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brakets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
+The employee is asking: {injected_prompt}\n
+Sources:
+{sources}
+<|im_end|>
+"""
+        # loop o ver the results and add the source saved as filename to each result string
+        for i, row in result_df.iterrows():
+            result_df.loc[i,'result'] = f"{row['filename']}; {row['result']}"
+        # concatenate all the results into one string
+        result_string = result_df['result'].str.cat(sep="\n\n\n\n")
+            
 
-    # Option to display raw table instead of summary from GPT-3
-    #st.table(result_df)
+        summary_prepped = summary_prompt.format(
+            injected_prompt=prompt,
+            sources=result_string
+        )
+        summary = openai.Completion.create(
+            engine=COMPLETIONS_MODEL,
+            prompt=summary_prepped,
+            temperature=0.7,
+            max_tokens=1024, 
+            n=1, 
+            stop=["<|im_end|>", "<|im_start|>"])
+        
+        # Response provided by GPT-3
+        st.write(summary['choices'][0]['text'])
+
+        # Header to give the user feedback what input led to the result
+        st.subheader("Prompt used to generate this output:")
+
+        # Display the prompt used to generate the result
+        st.write(summary_prepped)
+
+        # Result string Output
+        #st.write(result_string)
+
+        # Option to display raw table instead of summary from GPT-3
+        #st.table(result_df)
