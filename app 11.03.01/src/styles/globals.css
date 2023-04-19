@@ -1,0 +1,30 @@
+@tailwind base;
+@import "@appkit4/styles/appkit.min.css";
+/* uncomment to override with orange theme */
+/* @import "@appkit4/styles/themes/appkit.orange.min.css"; */
+@import '@appkit4/react-components/dist/styles/appkit4-react.min.css';
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  font-family: PwC Helvetica Neue !important;
+}
+
+
+@layer base {
+  h1 {
+    @apply text-2xl font-bold
+  }
+
+  h2 {
+    @apply text-xl font-semibold
+  }
+
+  h3 {
+   @apply text-lg font-medium
+  }
+
+  h4 {
+    @apply text-base font-bold
+  }
+}
