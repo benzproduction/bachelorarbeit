@@ -11,6 +11,14 @@ Dieses Beispiel-System ist eine Python-Anwendung, die das OpenAI Embeddings Mode
     ```bash
     docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
     ```
+3. Führen Sie embeddings.py aus, um die Vektoren der Text-Chunks zu erstellen und in der Datenbank zu speichern. Möglicherweise müssen Sie die Datei `embeddings.py` anpassen, um den Pfad zu den TXT-Dokumenten anzupassen.
+    ```bash
+    python embeddings.py
+    ```
+4. Starten Sie die streamlit-Anwendung:
+    ```bash
+    streamlit run path/2/this_dir/redis_test/search.py
+    ```
     
 ## Architektur
 Die Anwendung besteht aus zwei Hauptkomponenten:

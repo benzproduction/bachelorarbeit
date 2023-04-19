@@ -35,23 +35,28 @@ if st.button('Submit', key='generationSubmit'):
         st.write("Beep Boop, I don't know the answer to that.")
     else:
         # Build a prompt to provide the original query, the result and ask to summarise for the user
-        summary_prompt = """<|im_start|>system \n
-You are helping an employee with general questions regarding a for them unknown knowledge base. Be brief in your answers.
-Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+        summary_prompt = '''<|im_start|>system \n
+You are an intelligent assistant helping an employee with general questions regarding a for them unknown knowledge base. Be brief in your answers.
+Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. 
+Do not generate answers that don't use the sources below. 
+If asking a clarifying question to the user would help, ask the question.
 For tabular information return it as an html table. Do not return markdown format.
-Each source has a name followed by colon and the actual information, always include the source name for each fact you use in the response. Use square brakets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
+Each source has a name followed by colon and the actual information ending with a semicolon, always include the source name for each fact you use in the response.
+Use square brakets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
 The employee is asking: {injected_prompt}\n
 Sources:
 {sources}
 <|im_end|>
-"""
-        # loop o ver the results and add the source saved as filename to each result string
-        for i, row in result_df.iterrows():
-            result_df.loc[i,'result'] = f"{row['filename']}; {row['result']}"
-        # concatenate all the results into one string
-        result_string = result_df['result'].str.cat(sep="\n\n\n\n")
-            
+'''
+# possible additional prompt sentences:
+# For example, if the question is \"What color is the sky?\" and one of the information sources says \"info123: the sky is blue whenever it's not cloudy\", then answer with \"The sky is blue [info123]\". 
 
+        # loop over the results and format the result string in the format described above
+        for i, row in result_df.iterrows():
+            result_df.loc[i,'result'] = f"{row['filename']}: {row['result']};"
+        # combine all returned sources into one string
+        result_string = result_df['result'].str.cat(sep="\n\n")
+        # inject the prompt and the result string into the summary prompt
         summary_prepped = summary_prompt.format(
             injected_prompt=prompt,
             sources=result_string
