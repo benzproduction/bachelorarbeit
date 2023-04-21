@@ -1,6 +1,5 @@
 import pandas as pd 
 import numpy as np
-import openai
 from redis import Redis
 from redis.commands.search.field import VectorField
 from redis.commands.search.field import TextField, NumericField
@@ -43,7 +42,7 @@ def load_vectors(client:Redis, input_list, vector_field_name):
     p.execute()
 
 # Make query to Redis
-def query_redis(redis_conn,query,index_name, top_k=2):
+def query_redis(redis_conn,query,index_name, top_k=5):
     
     
 
@@ -87,10 +86,10 @@ def get_redis_results(redis_conn,query,index_name):
     result_df.columns = ['id','result','certainty',]
     return result_df
 
-def get_redis_results2(redis_conn,query,index_name):
+def get_redis_results2(redis_conn,query,index_name, top_k=5):
     
     # Get most relevant documents from Redis
-    query_result = query_redis(redis_conn,query,index_name)
+    query_result = query_redis(redis_conn,query,index_name, top_k=top_k)
     # if the result is empty, return an empty dataframe
     if query_result.total == 0:
         return pd.DataFrame()
@@ -98,7 +97,6 @@ def get_redis_results2(redis_conn,query,index_name):
     # Extract info into a list
     query_result_list = []
     for i, result in enumerate(query_result.docs):
-        print(result)
         result_order = i
         text = result.text_chunk
         score = result.vector_score
