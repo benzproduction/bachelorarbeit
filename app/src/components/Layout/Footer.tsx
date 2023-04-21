@@ -8,7 +8,7 @@ type LegalItemProps = {
 
 const LegalItem: React.FC<LegalItemProps> = ({ title, link, ...props }) => {
   return (
-    <span className="p-1 text-sm text-white">
+    <span className="p-1 text-sm">
       <Link href={link}>
         <span className="no-underline hover:text-data-yellow-value" {...props}>
           {title}
@@ -27,10 +27,10 @@ const Footer: React.FC<Props> = ({ impressum = true }) => {
   return (
     <div
       id="footer"
-      className="flex flex-wrap items-center justify-between bg-colors-background-default-dark px-1"
+      className="flex flex-wrap items-center justify-between px-1 ml-10"
     >
       <div className="flex">
-        <span className="p-1 text-sm text-white">
+        <span className="p-1 text-sm">
           &#xA9; {year} PwC. All rights reserved. PwC refers to the PwC network
           and/or one or more of its member firms, each of which is a separate
           legal entity.

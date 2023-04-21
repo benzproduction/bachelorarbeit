@@ -1,8 +1,9 @@
-import { ReactNode, FC } from 'react';
-import Head from 'next/head';
-import Footer from './Footer';
-import Header from './Header';
-import { LoadingIndicator } from 'components/LoadingIndicator';
+import { ReactNode, FC } from "react";
+import Head from "next/head";
+import Footer from "./Footer";
+import Header from "./Header";
+import { LoadingIndicator } from "components/LoadingIndicator";
+import Sidebar from "./Sidebar";
 
 type Props = {
   title?: string;
@@ -10,16 +11,16 @@ type Props = {
 };
 
 const environment = () => {
-  if (typeof window == 'undefined') return null;
+  if (typeof window == "undefined") return null;
   const isStaging = window?.location.hostname.match(/stg/g)?.length;
   const isLocal = window?.location.hostname.match(/localhost/g)?.length;
 
-  return isStaging ? 'Staging' : isLocal ? 'Localhost' : null;
+  return isStaging ? "Staging" : isLocal ? "Localhost" : null;
 };
 
 const Layout: FC<Props> = ({ children, title }) => {
   const env = environment();
-  const suffix = env ? ` - ${env}` : '';
+  const suffix = env ? ` - ${env}` : "";
 
   return (
     <>
@@ -39,10 +40,14 @@ const Layout: FC<Props> = ({ children, title }) => {
         </Head>
 
         <Header title={title} />
-        <div className="flex-auto overflow-auto bg-colors-background-default-value">
-          {children}
+        <div className="flex flex-row flex-auto bg-colors-background-default-value w-full">
+          <Sidebar />
+          <div className="flex flex-col overflow-auto bg-colors-background-default-value p-10 pb-0 justify-between w-full">
+            {children}
+            <Footer />
+          </div>
         </div>
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </>
   );

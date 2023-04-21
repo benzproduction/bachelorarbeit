@@ -16,4 +16,4 @@ export default withAuth(async function middleware(req) {
   return NextResponse.next({ request: { headers } });
 });
 
-export const config = { matcher: ['/api/v1/:path*'] };
+export const config = { matcher: ['/api/v2/:path*'] };
