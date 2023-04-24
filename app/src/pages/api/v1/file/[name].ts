@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+import { BlobServiceClient, ContainerClient, RestError } from '@azure/storage-blob';
 import { withMethods } from 'lib/middlewares';
 
 
@@ -38,6 +38,11 @@ async function handler(
         res.status(200).send(blob.readableStreamBody);
         return;
       } catch (error) {
+        if (error instanceof RestError) {
+          if (error.statusCode === 404) {
+            return res.status(404).end(`File ${filename} not found.`);
+          }
+        }
         res.status(500).end(`Failed to get file ${filename}.`);
       }
     }

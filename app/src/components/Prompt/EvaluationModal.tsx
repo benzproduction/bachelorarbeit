@@ -16,7 +16,7 @@ import { css } from "@emotion/css";
 import { FeedsComments } from "@appkit4/react-components/feeds-comments";
 
 const Portal: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
-  const root = document.querySelector("#__next") as HTMLElement;
+  const root = document.querySelector("#answer-evaluation-modal") as HTMLElement;
   return createPortal(children, root);
 };
 
@@ -265,6 +265,7 @@ const EvaluationModal = ({ visible, onClose, answer, sources }: Props) => {
   return (
     <>
       <Modal
+        id="answer-evaluation-modal"
         visible={visible}
         title={"Answer Evaluation"}
         ariaLabel={"Answer Evaluation"}
