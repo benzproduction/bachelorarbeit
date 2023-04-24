@@ -25,7 +25,7 @@ const Layout: FC<Props> = ({ children, title }) => {
   return (
     <>
       <LoadingIndicator />
-      <div className="flex h-screen flex-col">
+      <div className="flex h-screen flex-col relative">
         <Head>
           <title>{`${title}${suffix}`}</title>
           <meta charSet="utf-8" />
@@ -47,7 +47,7 @@ const Layout: FC<Props> = ({ children, title }) => {
             <Footer />
           </div>
         </div>
-        {/* <Footer /> */}
+        <div id="modal-root"></div>
       </div>
     </>
   );

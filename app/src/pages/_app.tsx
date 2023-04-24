@@ -4,6 +4,7 @@ import MainLayout from 'components/Layout';
 import SwrProvider from 'providers/SwrProvider';
 
 import 'styles/globals.css';
+import 'styles/default.scss';
 
 type AppLayoutProps = AppProps & {
   Component: ExtendedNextPage;

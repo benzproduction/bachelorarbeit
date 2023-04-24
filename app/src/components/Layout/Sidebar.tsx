@@ -14,7 +14,7 @@ const Sidebar = () => {
     },
     {
       name: "Prompt",
-      prefixIcon: "venn-abc",
+      prefixIcon: "ask-question",
     },
     {
       name: "Chat",
@@ -69,7 +69,7 @@ const Sidebar = () => {
   return (
     <Navigation
       width={330}
-      className="h-[calc(100vh-4rem)]"
+      className="h-[calc(100vh-4rem)] sticky top-[4rem]"
       showTooltip={true}
       hasHeader={false}
       navList={navList}

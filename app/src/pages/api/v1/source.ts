@@ -30,6 +30,7 @@ function float32Buffer(arr: number[]) {
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { query, top_k = 5 } = req.body;
+
     if (!query) {
         res.status(400).json({ message: 'No query provided.' });
         return;
@@ -54,7 +55,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             },
             SORTBY: {
                 BY: 'vector_score',
-                DIRECTION: 'ASC'
+                DIRECTION: 'DESC'
             },
             LIMIT: {
                 from: 0,
@@ -69,8 +70,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         results.documents.forEach((document) => {
             uniqueFilenames.add(document.value.filename as string);
         });
-
-
 
         return res.status(200).json({
             results: results.documents,

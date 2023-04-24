@@ -29,13 +29,12 @@ async function handler(
         const blobClient = containerClient.getBlobClient(filename);
         const blob = await blobClient.download();
 
-        // send the blob
-        res.setHeader('Content-Type', 'application/octet-stream');
-        res.setHeader('Content-Length', blob.contentLength || 0);
-        res.setHeader(
-          'Content-Disposition',
-          `attachment; filename=${filename}`
-        );
+        if (filename.endsWith('.pdf')) {
+          res.setHeader('Content-Type', 'application/pdf');
+        } else {
+          res.setHeader('Content-Type', 'application/octet-stream');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        }
         res.status(200).send(blob.readableStreamBody);
         return;
       } catch (error) {

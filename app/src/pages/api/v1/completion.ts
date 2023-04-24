@@ -24,9 +24,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const params = {
         'model': MODELNAME,
         'prompt': prompt,
-        'max_tokens': 100,
+        'max_tokens': 1024,
         'temperature': 0.9,
         'top_p': 1,
+        'n': 1,
         // 'frequency_penalty': 0,
         // 'presence_penalty': 0,
         // 'stop': ["\n", " Human:", " AI:"]
@@ -41,4 +42,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 }
 
-export default withMethods(['POST', 'GET'], handler);
+export default withMethods(['POST'], handler);
