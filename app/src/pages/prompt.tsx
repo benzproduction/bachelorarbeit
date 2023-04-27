@@ -6,7 +6,7 @@ import { useState } from "react";
 import Answer, { Source } from "components/Prompt/Answer";
 import { Button } from "@appkit4/react-components";
 import toast from "components/toast";
-import { Loading } from '@appkit4/react-components/loading';
+import { Loading } from "@appkit4/react-components/loading";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
@@ -35,7 +35,7 @@ const PromptPage: NextPage = () => {
   };
 
   const checkPrompt = () => {
-    // check if the prompt includes the following values: 
+    // check if the prompt includes the following values:
     // <|im_start|>system in the start of the prompt
     // {injected_prompt} in the prompt
     // {sources} in the prompt
@@ -44,18 +44,33 @@ const PromptPage: NextPage = () => {
     // if not, show a toast with the error message for the missing value
 
     if (!prompt.includes("<|im_start|>system")) {
-      return toast({text: "The prompt must include <|im_start|>system", type: "error", duration: 3000});
+      return toast({
+        text: "The prompt must include <|im_start|>system",
+        type: "error",
+        duration: 3000,
+      });
     }
     if (!prompt.includes("{injected_prompt}")) {
-      return toast({text: "The prompt must include {injected_prompt} to deliver the question", type: "error", duration: 3000});
+      return toast({
+        text: "The prompt must include {injected_prompt} to deliver the question",
+        type: "error",
+        duration: 3000,
+      });
     }
     if (!prompt.includes("{sources}")) {
-      return toast({text: "The prompt must include {sources} to answer your question", type: "error", duration: 3000});
+      return toast({
+        text: "The prompt must include {sources} to answer your question",
+        type: "error",
+        duration: 3000,
+      });
     }
     if (!prompt.includes("<|im_end|>")) {
-      return toast({text: "The prompt must include <|im_end|>system", type: "error", duration: 3000});
+      return toast({
+        text: "The prompt must include <|im_end|>system",
+        type: "error",
+        duration: 3000,
+      });
     }
-
   };
 
   const onSubmit = async () => {
@@ -79,9 +94,11 @@ const PromptPage: NextPage = () => {
         const sources = await res1.json();
         setSources(sources.results);
 
-        const sourceString = sources.results.map((source: Source) => {
-          return `${source.value.filename}: ${source.value.text_chunk};`;
-        }).join("\n");
+        const sourceString = sources.results
+          .map((source: Source) => {
+            return `${source.value.filename}: ${source.value.text_chunk};`;
+          })
+          .join("\n");
 
         // use the sources to generate the complete prompt
         const completePrompt = prompt
@@ -100,13 +117,17 @@ const PromptPage: NextPage = () => {
           }),
         });
 
-        if(res2.ok) {
+        if (res2.ok) {
           const answer = await res2.json();
           setLoading(false);
           setAnswer(answer);
           setShowAnswer(true);
         } else {
-          toast({text: `Something went wrong (Status: ${res2.status})`, type: "error", duration: 3000});
+          toast({
+            text: `Something went wrong (Status: ${res2.status})`,
+            type: "error",
+            duration: 3000,
+          });
           setLoading(false);
         }
       }
@@ -116,10 +137,12 @@ const PromptPage: NextPage = () => {
     }
   };
 
-
   return (
     <div className="flex flex-col gap-10">
-      <PageHeader title="Prompt" subtitle="This is the prompt page" />
+      <PageHeader
+        title="Prompt"
+        subtitle="Welcome to the prompt page! Here, you can ask any question regarding the documents uploaded to our system. Our AI-powered system will generate an answer to your question, and you also have the option to adjust the prompt used to generate the answer. Once the answer is generated, you can view the sources used to generate it. We encourage you to evaluate the generated answer using the 'evaluate' button, to ensure that our system is working properly. We're here to help you find the information you need, so don't hesitate to ask!"
+      />
       <div className="flex flex-row w-full gap-5 self-center max-w-4xl ">
         <div className="flex flex-col w-1/2">
           <Input
@@ -156,14 +179,19 @@ const PromptPage: NextPage = () => {
           {/* TODO: Add a Dropdown to save or load a saved prompt */}
         </div>
       </div>
-      {loading && <Loading loadingType='circular' indeterminate={true} compact={false}></Loading>}
+      {loading && (
+        <Loading
+          loadingType="circular"
+          indeterminate={true}
+          compact={false}
+        ></Loading>
+      )}
       {showAnswer && (
         <Answer
           onClose={() => {
             setShowAnswer(false);
           }}
-          answer={answer?.choices[0]?.text
-            }
+          answer={answer?.choices[0]?.text}
           sources={sources}
         />
       )}

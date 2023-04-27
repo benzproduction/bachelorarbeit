@@ -6,6 +6,7 @@ import Image from "next/image";
 import LoadingDots from "components/Shared/LoadingDots";
 import { Avatar } from "@appkit4/react-components";
 import ReactMarkdown from 'react-markdown';
+import React from "react";
 
 export type Message = {
   type: "apiMessage" | "userMessage";
@@ -69,7 +70,7 @@ const ChatPage: NextPage = () => {
     setQuery("");
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/v1/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -120,6 +121,21 @@ const ChatPage: NextPage = () => {
     }
   };
 
+  const formatMessage = (answer: string) => {
+    const regex = /\[([^\]]+)\]/g;
+    const matches = answer.match(regex);
+    if (matches) {
+      matches.forEach((match) => {
+        const filename = match.replace("[", "").replace("]", "");
+        const link = `(<a href="/api/v1/file/${filename}#page=1" target="_blank" class="ap-link">${filename}</a>)`;
+        answer = answer.replace(match, link);
+      });
+    }
+    answer = answer.replace(/(assistant|Assistant): /, "");
+
+    return answer.replace(/\n/g, "<br />");
+  };
+
   return (
     <>
       <div className="mx-auto flex flex-col gap-4">
@@ -137,15 +153,7 @@ const ChatPage: NextPage = () => {
                   className = styles.apimessage;
                 } else {
                   icon = (
-                    <Image
-                      key={index}
-                      src="/usericon.png"
-                      alt="Me"
-                      width="30"
-                      height="30"
-                      className={styles.usericon}
-                      priority
-                    />
+                    <div className="mr-4"><Avatar label="XX" compact /></div>
                   );
                   // The latest message sent by the user will be animated while waiting for a response
                   className =
@@ -154,13 +162,12 @@ const ChatPage: NextPage = () => {
                       : styles.usermessage;
                 }
                 return (
-                  <>
-                    <div key={`chatMessage-${index}`} className={className}>
+                  <React.Fragment key={`chatMessage-${index}`}>
+                    <div className={className}>
                       {icon}
                       <div className={styles.markdownanswer}>
-                        <ReactMarkdown linkTarget="_blank">
-                            {message.message}
-                          </ReactMarkdown>
+                      <p dangerouslySetInnerHTML={{ __html: formatMessage(message.message) }} />
+                          
                       </div>
                     </div>
                     {message.sourceDocs && (
@@ -190,7 +197,7 @@ const ChatPage: NextPage = () => {
                           </Accordion> */}
                       </div>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </div>
