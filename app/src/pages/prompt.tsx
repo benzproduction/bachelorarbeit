@@ -7,6 +7,7 @@ import Answer, { Source } from "components/Prompt/Answer";
 import { Button } from "@appkit4/react-components";
 import toast from "components/toast";
 import { Loading } from "@appkit4/react-components/loading";
+import { FileModal } from "components/Shared";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
@@ -26,6 +27,7 @@ const PromptPage: NextPage = () => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fileModalVisible, setFileModalVisible] = useState(false);
 
   const onQuestionChange = (value: any, event: any) => {
     setQuestion(value);
@@ -206,6 +208,17 @@ const PromptPage: NextPage = () => {
           sources={sources}
         />
       )}
+      <FileModal
+        visible={fileModalVisible}
+        onClose={() => {
+          setFileModalVisible(false);
+        }}
+        fileName="pv12.pdf"
+        fileOptions={{
+          page: 1,
+          toolbar: false,
+        }}
+      />
     </div>
   );
 };
