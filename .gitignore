@@ -4,3 +4,4 @@ data/clean
 data/rag
 .env
 __pycache__
+.vscode

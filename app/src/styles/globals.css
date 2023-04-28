@@ -6,7 +6,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   font-family: PwC Helvetica Neue !important;
 }
 
@@ -21,7 +22,7 @@ html, body {
   }
 
   h3 {
-   @apply text-lg font-medium
+    @apply text-lg font-medium
   }
 
   h4 {
@@ -55,5 +56,105 @@ html, body {
 }
 
 .file-table td {
-    cursor: pointer;
-  }
+  cursor: pointer;
+}
+
+/* 500 */
+
+.cls-1,
+.cls-10 {
+  fill: none;
+}
+
+.cls-1 {
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.96px;
+}
+
+.cls-2 {
+  fill: var(--ap-svg-theme-62479C, #62479C);
+}
+
+.cls-3 {
+  fill: var(--ap-svg-theme-221F1F, #221F1F);
+}
+
+.cls-4 {
+  fill: var(--ap-svg-theme-474747, #474747);
+}
+
+.cls-5 {
+  fill: var(--ap-svg-theme-2D2D2C, #2D2D2C);
+}
+
+.cls-6 {
+  fill: var(--ap-svg-theme-7F7F7F, #7F7F7F);
+}
+
+.cls-7 {
+  fill: var(--ap-svg-theme-146D6E, #146D6E);
+}
+
+.cls-8 {
+  fill: var(--ap-svg-theme-159395, #159395);
+}
+
+.cls-9 {
+  fill: var(--ap-svg-theme-FFFFFF-1, #FFFFFF);
+}
+
+.cls-11 {
+  fill: var(--ap-svg-theme-F3F3F3, #F3F3F3);
+}
+
+.cls-12 {
+  fill: var(--ap-svg-theme-DEDEDD, #DEDEDD);
+}
+
+.cls-13 {
+  fill: var(--ap-svg-theme-4290CE-1, #4290CE);
+}
+
+.cls-14 {
+  fill: var(--ap-svg-theme-00588F-1, #00588F);
+}
+
+/* 404 */
+
+.cls-21 {
+  fill: var(--ap-svg-theme-E9E8E8, #e9e8e8);
+}
+
+.cls-22 {
+  fill: var(--ap-svg-theme-FFFFFF-2, #ffffff);
+}
+
+.cls-23 {
+  fill: var(--ap-svg-theme-CACACA, #cacaca);
+}
+
+.cls-24 {
+  fill: var(--ap-svg-theme-F15633, #f15633);
+}
+
+.cls-25 {
+  fill: var(--ap-svg-theme-F9B2A3, #f9b2a3);
+}
+
+.cls-26 {
+  fill: var(--ap-svg-theme-F47F65, #f47f65);
+}
+
+.cls-27 {
+  fill: var(--ap-svg-theme-4290CE-2, #4290ce);
+}
+
+.cls-28 {
+  fill: var(--ap-svg-theme-00588F-2, #00588f);
+}
+
+.cls-29 {
+  fill: var(--ap-svg-theme-676768, #676768);
+}

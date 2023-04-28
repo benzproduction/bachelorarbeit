@@ -122,6 +122,17 @@ const PromptPage: NextPage = () => {
           setLoading(false);
           setAnswer(answer);
           setShowAnswer(true);
+          // fetch("/api/v1/qa_dataset", {
+          //   method: "POST",
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //   },
+          //   body: JSON.stringify({
+          //     question: question,
+          //     answer: answer,
+          //     sources: sources.results,
+          //   }),
+          // });
         } else {
           toast({
             text: `Something went wrong (Status: ${res2.status})`,

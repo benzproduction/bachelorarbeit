@@ -1,10 +1,11 @@
-import type { AppProps } from 'next/app';
-import { SessionProvider, signIn, useSession } from 'next-auth/react';
-import MainLayout from 'components/Layout';
-import SwrProvider from 'providers/SwrProvider';
+import type { AppProps } from "next/app";
+import { SessionProvider, signIn, useSession } from "next-auth/react";
+import MainLayout from "components/Layout";
+import SwrProvider from "providers/SwrProvider";
 
-import 'styles/globals.css';
-import 'styles/default.scss';
+import "styles/globals.css";
+import "styles/default.scss";
+import ErrorBoundary from "components/Shared/ErrorBoundary";
 
 type AppLayoutProps = AppProps & {
   Component: ExtendedNextPage;
@@ -24,8 +25,9 @@ const MyApp = ({
 
   return (
     <SessionProvider session={session}>
-      {/* Uncomment to enable auth */}
-      {/* <AuthWrapper> */}
+      <ErrorBoundary>
+        {/* Uncomment to enable auth */}
+        {/* <AuthWrapper> */}
         <SwrProvider>
           <MainLayout title="Knowledge Base Investigator">
             <Layout>
@@ -33,7 +35,8 @@ const MyApp = ({
             </Layout>
           </MainLayout>
         </SwrProvider>
-      {/* </AuthWrapper> */}
+        {/* </AuthWrapper> */}
+      </ErrorBoundary>
     </SessionProvider>
   );
 };
@@ -41,10 +44,10 @@ const MyApp = ({
 const Auth: React.FC<{ children: any }> = ({ children }) => {
   const { status } = useSession({
     required: true,
-    onUnauthenticated: () => signIn('pwc'),
+    onUnauthenticated: () => signIn("pwc"),
   });
 
-  if (status === 'loading') return null;
+  if (status === "loading") return null;
   return children;
 };
 
