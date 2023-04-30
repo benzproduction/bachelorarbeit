@@ -8,6 +8,7 @@ import { Button } from "@appkit4/react-components";
 import toast from "components/toast";
 import { Loading } from "@appkit4/react-components/loading";
 import { FileModal } from "components/Shared";
+import SaveUrlModal from "components/Shared/SaveUrlModal";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
@@ -28,6 +29,7 @@ const PromptPage: NextPage = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(false);
   const [fileModalVisible, setFileModalVisible] = useState(false);
+  const [saveUrlModalVisible, setSaveUrlModalVisible] = useState(false);
 
   const onQuestionChange = (value: any, event: any) => {
     setQuestion(value);
@@ -73,80 +75,96 @@ const PromptPage: NextPage = () => {
         duration: 3000,
       });
     }
+    return true;
+  };
+  const checkQuestion = () => {
+    // if the question includes an http/https link,
+    // show a modal which asks the user if he wants to permanently save the link as a source
+
+    if (question.includes("http://") || question.includes("https://")) {
+      setSaveUrlModalVisible(true);
+      console.log(
+        "the question includes an url therefore we exit the normal flow"
+      );
+      return false;
+    }
   };
 
   const onSubmit = async () => {
-    setLoading(true);
-    checkPrompt();
-    try {
-      // query the sources from /api/v1/source
-      // body has to include the question and top_k
-      // top_k is the number of sources to return
-      const res1 = await fetch("/api/v1/source", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: question,
-          top_k: 4,
-        }),
-      });
-      if (res1.ok) {
-        const sources = await res1.json();
-        setSources(sources.results);
-
-        const sourceString = sources.results
-          .map((source: Source) => {
-            return `${source.value.filename}: ${source.value.text_chunk};`;
-          })
-          .join("\n");
-
-        // use the sources to generate the complete prompt
-        const completePrompt = prompt
-          .replace("{injected_prompt}", question)
-          .replace("{sources}", sourceString);
-
-        // query the answer from /api/v1/completion
-        // body has to include the prompt
-        const res2 = await fetch("/api/v1/completion", {
+    const promptOk = checkPrompt();
+    const questionOk = checkQuestion();
+    if (promptOk && questionOk) {
+      try {
+        setLoading(true);
+        // query the sources from /api/v1/source
+        // body has to include the question and top_k
+        // top_k is the number of sources to return
+        const res1 = await fetch("/api/v1/source", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            prompt: completePrompt,
+            query: question,
+            top_k: 4,
           }),
         });
+        if (res1.ok) {
+          const sources = await res1.json();
+          setSources(sources.results);
 
-        if (res2.ok) {
-          const answer = await res2.json();
-          setLoading(false);
-          setAnswer(answer);
-          setShowAnswer(true);
-          // fetch("/api/v1/qa_dataset", {
-          //   method: "POST",
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //   },
-          //   body: JSON.stringify({
-          //     question: question,
-          //     answer: answer,
-          //     sources: sources.results,
-          //   }),
-          // });
-        } else {
-          toast({
-            text: `Something went wrong (Status: ${res2.status})`,
-            type: "error",
-            duration: 3000,
+          const sourceString = sources.results
+            .map((source: Source) => {
+              return `${source.value.filename}: ${source.value.text_chunk};`;
+            })
+            .join("\n");
+
+          // use the sources to generate the complete prompt
+          const completePrompt = prompt
+            .replace("{injected_prompt}", question)
+            .replace("{sources}", sourceString);
+
+          // query the answer from /api/v1/completion
+          // body has to include the prompt
+          const res2 = await fetch("/api/v1/completion", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              prompt: completePrompt,
+            }),
           });
-          setLoading(false);
+
+          if (res2.ok) {
+            const answer = await res2.json();
+            setLoading(false);
+            setAnswer(answer);
+            setShowAnswer(true);
+            // fetch("/api/v1/qa_dataset", {
+            //   method: "POST",
+            //   headers: {
+            //     "Content-Type": "application/json",
+            //   },
+            //   body: JSON.stringify({
+            //     question: question,
+            //     answer: answer,
+            //     sources: sources.results,
+            //   }),
+            // });
+          } else {
+            toast({
+              text: `Something went wrong (Status: ${res2.status})`,
+              type: "error",
+              duration: 3000,
+            });
+            setLoading(false);
+          }
         }
+      } catch (e) {
+        console.log(e);
+        setLoading(false);
       }
-    } catch (e) {
-      console.log(e);
-      setLoading(false);
     }
   };
 
@@ -217,6 +235,13 @@ const PromptPage: NextPage = () => {
         fileOptions={{
           page: 1,
           toolbar: false,
+        }}
+      />
+      <SaveUrlModal
+        visible={saveUrlModalVisible}
+        onClose={(save: boolean) => {
+          console.log("Save: ", save);
+          setSaveUrlModalVisible(false);
         }}
       />
     </div>
