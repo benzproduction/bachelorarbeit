@@ -9,20 +9,21 @@ import toast from "components/toast";
 import { Loading } from "@appkit4/react-components/loading";
 import { FileModal } from "components/Shared";
 import SaveUrlModal from "components/Shared/SaveUrlModal";
+import { Select } from "@appkit4/react-components";
+import useSWR from "swr";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
-  You are an intelligent assistant helping an employee with general questions regarding a for them unknown knowledge base. Be brief in your answers.
-  Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. 
-  Do not generate answers that don't use the sources below. Answer the question in the language of the employees question.
-  If asking a clarifying question to the user would help, ask the question.
-  For tabular information return it as an html table. Do not return markdown format.
-  Each source has a name followed by colon and the actual information ending with a semicolon, always include the source name for each fact you use in the response.
-  Use square brakets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
-  The employee is asking: {injected_prompt}\n
-  Sources:
-  {sources}
-  <|im_end|>`);
+You are an intelligent assistant helping an employee with general questions regarding a for them unknown knowledge base. Be brief in your answers.
+Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. 
+Do not generate answers that don't use the sources below. Answer the question in the language of the employees question.
+If asking a clarifying question to the user would help, ask the question.
+For tabular information return it as an html table. Do not return markdown format.
+Each source has a name followed by colon and the actual information ending with a semicolon, always include the source name for each fact you use in the response.
+Use square brackets to reference the source, e.g. [info1.txt]. Don't combine sources, list each source separately, e.g. [info1.txt][info2.pdf].
+The employee is asking: {question}
+Sources:{sources}
+<|im_end|>`);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<any>("");
   const [showAnswer, setShowAnswer] = useState(false);
@@ -30,6 +31,14 @@ const PromptPage: NextPage = () => {
   const [loading, setLoading] = useState(false);
   const [fileModalVisible, setFileModalVisible] = useState(false);
   const [saveUrlModalVisible, setSaveUrlModalVisible] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState("real_estate_index");
+
+  const { data: indices } = useSWR("/api/v1/indices", {
+    onSuccess: (data) => {
+      setSelectedIndex(data[0]);
+    },
+    revalidateOnFocus: false,
+  });
 
   const onQuestionChange = (value: any, event: any) => {
     setQuestion(value);
@@ -41,7 +50,7 @@ const PromptPage: NextPage = () => {
   const checkPrompt = () => {
     // check if the prompt includes the following values:
     // <|im_start|>system in the start of the prompt
-    // {injected_prompt} in the prompt
+    // {question} in the prompt
     // {sources} in the prompt
     // <|im_end|>system in the end of the prompt
 
@@ -54,9 +63,9 @@ const PromptPage: NextPage = () => {
         duration: 3000,
       });
     }
-    if (!prompt.includes("{injected_prompt}")) {
+    if (!prompt.includes("{question}")) {
       return toast({
-        text: "The prompt must include {injected_prompt} to deliver the question",
+        text: "The prompt must include {question} to deliver the question",
         type: "error",
         duration: 3000,
       });
@@ -121,7 +130,7 @@ const PromptPage: NextPage = () => {
 
           // use the sources to generate the complete prompt
           const completePrompt = prompt
-            .replace("{injected_prompt}", question)
+            .replace("{question}", question)
             .replace("{sources}", sourceString);
 
           // query the answer from /api/v1/completion
@@ -168,6 +177,9 @@ const PromptPage: NextPage = () => {
     }
   };
 
+  const saveUrl2DB = async (url: string) => {};
+  const useUrlasSource = async (url: string) => {};
+
   return (
     <div className="flex flex-col gap-10">
       <PageHeader
@@ -175,7 +187,20 @@ const PromptPage: NextPage = () => {
         subtitle="Welcome to the prompt page! Here, you can ask any question regarding the documents uploaded to our system. Our AI-powered system will generate an answer to your question, and you also have the option to adjust the prompt used to generate the answer. Once the answer is generated, you can view the sources used to generate it. We encourage you to evaluate the generated answer using the 'evaluate' button, to ensure that our system is working properly. We're here to help you find the information you need, so don't hesitate to ask!"
       />
       <div className="flex flex-row w-full gap-5 self-center max-w-4xl ">
-        <div className="flex flex-col w-1/2">
+        <div className="flex flex-col w-1/2 gap-4 relative">
+          <Select
+            searchable={false}
+            data={indices.map((index: string) => {
+              return { label: index, value: index };
+            })}
+            placeholder="Knowledge Base"
+            value={selectedIndex}
+            onSelect={(val) => setSelectedIndex(val as string)}
+          />
+          <button className="ap-modal-header-icon absolute top-[-2rem] right-0">
+            <span className="Appkit4-icon icon-horizontal-more-outline ap-font-medium"></span>
+          </button>
+          {/* TODO: Add a Dropdown to display the option: Create a new knowledge base */}
           <Input
             title="Your Question"
             value={question}
@@ -184,7 +209,7 @@ const PromptPage: NextPage = () => {
             name="question"
             allowClear={true}
           />
-          <div className="mt-4 flex flex-row-reverse">
+          <div className="flex flex-row">
             <Button
               kind="primary"
               type="submit"
