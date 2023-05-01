@@ -4,9 +4,9 @@ import { withMethods } from "lib/middlewares";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // get all unique indices, that are stored in redis
-
-    res.status(200).json(["real_estate_index"]);
+    const keys = await redisClient.keys("*:*");
+    const uniqueIndices = new Set(keys.map((key) => key.split(":")[0]));
+    return res.status(200).json(Array.from(uniqueIndices));
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error." });

@@ -59,6 +59,13 @@ body {
   cursor: pointer;
 }
 
+.error-input-text {
+  color: var(--color-text-error) !important;
+  font-size: 0.775rem !important;
+  line-height: 1rem !important;
+}
+ 
+
 /* 500 */
 
 .cls-1,
