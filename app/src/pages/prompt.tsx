@@ -61,7 +61,7 @@ Sources:{sources}
 
     if (!prompt.includes("<|im_start|>system")) {
       return toast({
-        text: "The prompt must include <|im_start|>system",
+        text: "The prompt must start with <|im_start|>system",
         type: "error",
         duration: 3000,
       });
@@ -100,6 +100,7 @@ Sources:{sources}
       );
       return false;
     }
+    return true;
   };
 
   const onSubmit = async () => {
