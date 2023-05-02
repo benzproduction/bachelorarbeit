@@ -11,6 +11,8 @@ import { FileModal } from "components/Shared";
 import SaveUrlModal from "components/Shared/SaveUrlModal";
 import { Select } from "@appkit4/react-components";
 import useSWR from "swr";
+import { OptionButton } from "components/Shared/OptionButton";
+import NewKBModal from "components/Shared/NewKBModal";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
@@ -31,6 +33,7 @@ Sources:{sources}
   const [loading, setLoading] = useState(false);
   const [fileModalVisible, setFileModalVisible] = useState(false);
   const [saveUrlModalVisible, setSaveUrlModalVisible] = useState(false);
+  const [createKBModelVisible, setCreateKBModelVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState("real_estate_index");
 
   const { data: indices } = useSWR("/api/v1/indices", {
@@ -190,17 +193,32 @@ Sources:{sources}
         <div className="flex flex-col w-1/2 gap-4 relative">
           <Select
             searchable={false}
-            data={indices.map((index: string) => {
+            data={indices?.map((index: string) => {
               return { label: index, value: index };
             })}
             placeholder="Knowledge Base"
             value={selectedIndex}
             onSelect={(val) => setSelectedIndex(val as string)}
           />
-          <button className="ap-modal-header-icon absolute top-[-2rem] right-0">
-            <span className="Appkit4-icon icon-horizontal-more-outline ap-font-medium"></span>
-          </button>
-          {/* TODO: Add a Dropdown to display the option: Create a new knowledge base */}
+          <OptionButton
+            options={[
+              {
+                text: "Create a new knowledge base",
+                onClick: () => {
+                  setCreateKBModelVisible(true);
+                },
+              },
+              {
+                text: "Add documents to a knowledge base",
+                onClick: () => {},
+              },
+            ]}
+            wrapperStyle={{
+              position: "absolute",
+              top: "-2.75rem",
+              right: "0",
+            }}
+          />
           <Input
             title="Your Question"
             value={question}
@@ -229,10 +247,23 @@ Sources:{sources}
             onChange={onPromptChange}
             name="prompt"
           />
-          <button className="ap-modal-header-icon absolute top-[-2rem] right-0">
-            <span className="Appkit4-icon icon-horizontal-more-outline ap-font-medium"></span>
-          </button>
-          {/* TODO: Add a Dropdown to save or load a saved prompt */}
+          <OptionButton
+            options={[
+              {
+                text: "Save the current prompt",
+                onClick: () => {},
+              },
+              {
+                text: "Load a saved prompt",
+                onClick: () => {},
+              },
+            ]}
+            wrapperStyle={{
+              position: "absolute",
+              top: "-2.75rem",
+              right: "0",
+            }}
+          />
         </div>
       </div>
       {loading && (
@@ -268,6 +299,10 @@ Sources:{sources}
           console.log("Save: ", save);
           setSaveUrlModalVisible(false);
         }}
+      />
+      <NewKBModal
+        visible={createKBModelVisible}
+        onClose={() => setCreateKBModelVisible(false)}
       />
     </div>
   );
