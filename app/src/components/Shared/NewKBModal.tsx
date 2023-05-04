@@ -15,6 +15,13 @@ const NewKBModal = ({ visible, onClose }: Props) => {
   const [KBName, setKBName] = useState("");
   const [KBNameError, setKBNameError] = useState(false);
 
+  const handleClose = () => {
+    setKBName("");
+    setKBNameError(false);
+    setFileList([]);
+    onClose();
+  };
+
   const onChange = (file: File, fileList: FileModel[]): void => {
     setFileList(fileList);
   };
@@ -44,7 +51,7 @@ const NewKBModal = ({ visible, onClose }: Props) => {
     // send the files to the backend /api/v1/file/upload
     // the KBName should be set as query parameter
     const formData = new FormData();
-    formData.append("containerName", KBName);
+    formData.append("KBName", KBName);
     for (let i = 0; i < fileList.length; i++) {
       formData.append("files", fileList[i].originFile as File);
     }
@@ -70,13 +77,13 @@ const NewKBModal = ({ visible, onClose }: Props) => {
   return (
     <Modal
       visible={visible}
-      onCancel={() => onClose()}
+      onCancel={handleClose}
       title="Create a new knowledge base"
       modalStyle={{ width: "33.75rem" }}
       footerStyle={{ paddingTop: "8px", marginTop: "-8px", minHeight: "64px" }}
       footer={
         <>
-          <Button onClick={() => onClose()} kind="secondary">
+          <Button onClick={handleClose} kind="secondary">
             Close
           </Button>
           <Button

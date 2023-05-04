@@ -55,17 +55,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     const { fields, files } = await parseForm(req);
-    const { containerName } = fields;
+    const { KBName } = fields;
     var uploadedFiles = files.files;
 
-    if (!containerName) {
-      throw new FormidableError("No containerName provided", 400, 400);
+    if (!KBName) {
+      throw new FormidableError("No KBName provided", 400, 400);
     }
     if (!Array.isArray(uploadedFiles)) {
       uploadedFiles = [uploadedFiles];
     }
     const containerClient: ContainerClient =
-      blobServiceClient.getContainerClient(containerName);
+      blobServiceClient.getContainerClient(
+        `${process.env.AZURE_STORAGE_CONTAINER_NAME}`
+      );
 
     const createContainerResponse = await containerClient.createIfNotExists({});
     if (!createContainerResponse) {
@@ -73,7 +75,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     for (const file of uploadedFiles) {
-      const blobName = `${file.originalFilename}`;
+      const blobName = `${KBName}/${file.originalFilename}`;
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       const uploadBlobResponse = await blockBlobClient.uploadFile(
         file.filepath

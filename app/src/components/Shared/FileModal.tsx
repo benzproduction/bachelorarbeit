@@ -1,6 +1,4 @@
 import { Modal } from "@appkit4/react-components/modal";
-import { Badge } from "@appkit4/react-components/badge";
-import { Button } from "@appkit4/react-components/button";
 
 type FileOptions = {
   page?: number;
