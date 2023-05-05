@@ -27,11 +27,6 @@ def pdf_to_text(file_stream : str) -> str:
     ----------
     - A single string containing the text extracted from all pages of the PDF document
     
-    Raises:
-    ----------
-    - FileNotFoundError if the given filename does not exist or cannot be opened
-    - ValueError if the given filename does not correspond to a PDF document
-    
     Example usage:
     >>> pdf_to_text('example.pdf')
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...'
@@ -54,11 +49,6 @@ def pdf_to_text_mapping(file_stream: str) -> List[Tuple[int, int, str]]:
       * the page number (starting from 0)
       * the offset in characters of the start of the page text relative to the beginning of the document
       * the text extracted from the page
-      
-    Raises:
-    ----------
-    - FileNotFoundError if the given filename does not exist or cannot be opened
-    - ValueError if the given filename does not correspond to a PDF document
     
     Example usage:
     >>> pdf_to_text_mapping('example.pdf')
