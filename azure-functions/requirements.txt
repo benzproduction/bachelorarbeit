@@ -5,3 +5,6 @@
 azure-functions
 pydantic
 PyPDF2
+tiktoken
+openai
+redis
