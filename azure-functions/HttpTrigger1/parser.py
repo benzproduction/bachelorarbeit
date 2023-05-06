@@ -35,6 +35,34 @@ def pdf_to_text(file_stream : str) -> str:
     pages = reader.pages
     return "\n".join([p.extract_text() for p in pages])
 
+def pdf_to_txt_w_pages(file_stream: str) -> Tuple[str, List[str]]:
+    """
+    Extracts the text from all pages of a PDF document and returns it as a single string.
+    
+    Args:
+    ----------
+    - file_stream: the file stream of the PDF document
+    
+    Returns:
+    ----------
+    - A tuple containing:
+      * A single string containing the text extracted from all pages of the PDF document
+      * A list of strings, where each string is the text extracted from a single page of the PDF document
+    
+    Example usage:
+    >>> pdf_to_text('example.pdf')
+    ('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt...', 
+     ['Lorem ipsum dolor sit amet...', 
+      'Consectetur adipiscing elit...', 
+      'Sed do eiusmod tempor incididunt...', 
+      ...])
+    """
+    reader = PdfReader(file_stream)
+    pages = reader.pages
+    page_texts = [p.extract_text() for p in pages]
+    text = "\n".join(page_texts)
+    return text, page_texts
+
 def pdf_to_text_mapping(file_stream: str) -> List[Tuple[int, int, str]]:
     """
     Extracts the text from all pages of a PDF document and returns it as a list of tuples.
@@ -67,3 +95,31 @@ def pdf_to_text_mapping(file_stream: str) -> List[Tuple[int, int, str]]:
         page_map.append((page_num, offset, page_text))
         offset += len(page_text)
     return page_map
+
+def find_page_from_text(text:str, pages: List[str]) -> int:
+    """
+    Finds the page number of a given text in a list of pages.
+    
+    Args:
+    ----------
+    - text: the text to search for
+    - pages: a list of strings, where each string is the text extracted from a single page of the PDF document
+    
+    Returns:
+    ----------
+    - The page number (starting from 0) of the given text in the list of pages
+    
+    Example usage:
+    >>> find_page_from_text('Sed do eiusmod tempor incididunt...', 
+                            ['Lorem ipsum dolor sit amet...', 
+                             'Consectetur adipiscing elit...', 
+                             'Sed do eiusmod tempor incididunt...', 
+                             ...])
+    2
+    """
+    offset = 0
+    for page_num, page_text in enumerate(pages):
+        if text in page_text:
+            return page_num
+        offset += len(page_text)
+    return -1
