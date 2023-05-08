@@ -21,6 +21,7 @@ class DocumentMetadata(BaseModel):
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
+    document_metadata: Optional[DocumentMetadata] = None
     page: Optional[int] = None
 
 

@@ -5,3 +5,9 @@
 azure-functions
 pydantic
 PyPDF2
+tiktoken
+openai
+redis
+matplotlib
+plotly.express
+scikit-learn
