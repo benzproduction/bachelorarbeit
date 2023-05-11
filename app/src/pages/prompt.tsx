@@ -120,6 +120,7 @@ Sources:{sources}
           body: JSON.stringify({
             query: question,
             top_k: 4,
+            index: selectedIndex,
           }),
         });
         if (res1.ok) {
@@ -173,6 +174,13 @@ Sources:{sources}
             });
             setLoading(false);
           }
+        } else {
+          setLoading(false);
+          toast({
+            text: `Something went wrong (Status: ${res1.status})`,
+            type: "error",
+            duration: 3000,
+          });
         }
       } catch (e) {
         console.log(e);

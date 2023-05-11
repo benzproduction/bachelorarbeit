@@ -17,7 +17,7 @@ const url = process.env.REDIS_URL;
 
 const VECTOR_DIM = 1536;
 const DISTANCE_METRIC = "COSINE";
-const INDEX_NAME = "real_estate_index";
+var INDEX_NAME = "real_estate_index";
 const PREFIX = "real_estate";
 
 function float32Buffer(arr: number[]) {
@@ -32,6 +32,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   const topK = Number(top_k) || 5;
+
+  if (index) {
+    INDEX_NAME = index;
+  }
+  // test if the index exists and if not return a 404
+  try {
+    const indexInfo = await redisClient.ft.info(INDEX_NAME);
+    if (!indexInfo) {
+      return res.status(404).json({ message: "Index not found." });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal server error." });
+  }
 
   const embeddings_params = {
     model: "text-embedding-ada-002",
