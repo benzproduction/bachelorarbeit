@@ -5,13 +5,13 @@ from redis.commands.search.field import VectorField
 from redis.commands.search.field import TextField, NumericField
 from redis.commands.search.query import Query
 from openai.embeddings_utils import get_embedding
-
+from typing import List
+from models import DocumentChunk
 from config import EMBEDDINGS_MODEL, PREFIX, VECTOR_FIELD_NAME
 
 # Get a Redis connection
-def get_redis_connection(host='localhost',port='6379',db=0):
-    
-    r = Redis(host=host, port=port, db=db,decode_responses=False)
+def get_redis_connection(password=None,host='localhost',port='6379',db=0):
+    r = Redis(host=host, port=port, db=db,decode_responses=False, password=password)
     return r
 
 # Create a Redis index to hold our data
@@ -39,6 +39,32 @@ def load_vectors(client:Redis, input_list, vector_field_name):
         # HSET
         p.hset(key,mapping=item_metadata)
             
+    p.execute()
+
+def save_chunks(r:Redis, vectors: List[DocumentChunk], index: str) -> None:
+    """
+    Saves the vectors to Redis
+    """
+    assert r.ping(), "Redis is not connected"
+    try:
+        print(f"Docs in index: {r.ft(index).info()['num_docs']}")
+    except Exception as e:
+        print(f"Index {index} does not exist. Exiting")
+        exit(1)
+    p = r.pipeline(transaction=False)
+    # load vectors
+    for vector in vectors:
+        #hash key
+        key=f"{index}:{vector.id}"
+        item_metadata = {}
+        item_metadata["filename"] = vector.metadata.source_filename
+        item_metadata["text_chunk"] = vector.text
+        item_metadata["page"] = vector.metadata.page
+        item_keywords_vector = np.array(vector.embedding,dtype= 'float32').tobytes()
+        item_metadata[VECTOR_FIELD_NAME]=item_keywords_vector
+
+        # HSET
+        r.hset(key,mapping=item_metadata)
     p.execute()
 
 # Make query to Redis
