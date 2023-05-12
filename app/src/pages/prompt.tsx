@@ -155,17 +155,24 @@ Sources:{sources}
             setLoading(false);
             setAnswer(answer);
             setShowAnswer(true);
-            // fetch("/api/v1/qa_dataset", {
-            //   method: "POST",
-            //   headers: {
-            //     "Content-Type": "application/json",
-            //   },
-            //   body: JSON.stringify({
-            //     question: question,
-            //     answer: answer,
-            //     sources: sources.results,
-            //   }),
-            // });
+            // try {
+            //   fetch("/api/v1/qa_dataset", {
+            //     method: "POST",
+            //     headers: {
+            //       "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({
+            //       question: question,
+            //       answer: answer?.choices[0]?.text,
+            //       sources: sources.results
+            //         .map(
+            //           ({ value: { filename, text_chunk } }: any) =>
+            //             `${filename}: ${text_chunk};`
+            //         )
+            //         .join("\n"),
+            //     }),
+            //   });
+            // } catch {}
           } else {
             toast({
               text: `Something went wrong (Status: ${res2.status})`,
@@ -291,7 +298,7 @@ Sources:{sources}
           sources={sources}
         />
       )}
-      <FileModal
+      {/* <FileModal
         visible={fileModalVisible}
         onClose={() => {
           setFileModalVisible(false);
@@ -301,7 +308,7 @@ Sources:{sources}
           page: 1,
           toolbar: false,
         }}
-      />
+      /> */}
       <SaveUrlModal
         visible={saveUrlModalVisible}
         onClose={(save: boolean) => {

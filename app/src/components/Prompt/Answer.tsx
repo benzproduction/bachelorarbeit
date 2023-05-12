@@ -127,6 +127,7 @@ const Answer = ({ answer, sources: originalSources, onClose }: Props) => {
         `(<a href="/api/v1/file/${source.filename}#page=1" target="_blank" class="ap-link">${source.filename}</a>)`
       );
     });
+    answerCopy = answerCopy.replace(/^\n|\n$/g, "");
     answerCopy = answerCopy.replace(/\n/g, "<br>");
 
     return answerCopy;
