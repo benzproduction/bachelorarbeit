@@ -13,6 +13,7 @@ import { Select } from "@appkit4/react-components";
 import useSWR from "swr";
 import { OptionButton } from "components/Shared/OptionButton";
 import NewKBModal from "components/Shared/NewKBModal";
+import TemperatureModal from "components/Shared/TemperatureModal";
 
 const PromptPage: NextPage = () => {
   const [prompt, setPrompt] = useState(`<|im_start|>system \n
@@ -35,6 +36,8 @@ Sources:{sources}
   const [saveUrlModalVisible, setSaveUrlModalVisible] = useState(false);
   const [createKBModelVisible, setCreateKBModelVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState("real_estate_index");
+  const [temperature, setTemperature] = useState(0.5);
+  const [temperatureModalVisible, setTemperatureModalVisible] = useState(false);
 
   const { data: indices } = useSWR("/api/v1/indices", {
     onSuccess: (data) => {
@@ -147,6 +150,7 @@ Sources:{sources}
             },
             body: JSON.stringify({
               prompt: completePrompt,
+              temperature: temperature,
             }),
           });
 
@@ -273,6 +277,12 @@ Sources:{sources}
                 text: "Load a saved prompt",
                 onClick: () => {},
               },
+              {
+                text: "Change temperature",
+                onClick: () => {
+                  setTemperatureModalVisible(true);
+                },
+              },
             ]}
             wrapperStyle={{
               position: "absolute",
@@ -319,6 +329,14 @@ Sources:{sources}
       <NewKBModal
         visible={createKBModelVisible}
         onClose={() => setCreateKBModelVisible(false)}
+      />
+      <TemperatureModal
+        visible={temperatureModalVisible}
+        onClose={() => {
+          setTemperatureModalVisible(false);
+        }}
+        temperature={temperature}
+        setTemperature={setTemperature}
       />
     </div>
   );
