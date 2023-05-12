@@ -1,8 +1,7 @@
 import PageHeader from "components/Shared/PageHeader";
 import { NextPage } from "next";
-import { useRouter } from "next/router";
 import { Input, TextArea } from "@appkit4/react-components/field";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Answer, { Source } from "components/Prompt/Answer";
 import { Button } from "@appkit4/react-components";
 import toast from "components/toast";
@@ -35,16 +34,19 @@ Sources:{sources}
   const [fileModalVisible, setFileModalVisible] = useState(false);
   const [saveUrlModalVisible, setSaveUrlModalVisible] = useState(false);
   const [createKBModelVisible, setCreateKBModelVisible] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState("real_estate_index");
+  const [selectedIndex, setSelectedIndex] = useState("");
   const [temperature, setTemperature] = useState(0.5);
   const [temperatureModalVisible, setTemperatureModalVisible] = useState(false);
 
-  const { data: indices } = useSWR("/api/v1/indices", {
-    onSuccess: (data) => {
-      setSelectedIndex(data[0]);
-    },
+  const { data: indices } = useSWR<Array<string>>("/api/v1/indices", {
     revalidateOnFocus: false,
   });
+
+  useEffect(() => {
+    if (indices && indices.length > 0) {
+      setSelectedIndex(indices[0]);
+    }
+  }, [indices]);
 
   const onQuestionChange = (value: any, event: any) => {
     setQuestion(value);

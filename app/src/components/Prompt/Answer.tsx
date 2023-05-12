@@ -12,6 +12,7 @@ export type Source = {
     vector_score: string;
     filename: string;
     text_chunk: string;
+    page?: number;
   };
 };
 type FlattenSource = {
@@ -19,6 +20,7 @@ type FlattenSource = {
   vector_score: string;
   filename: string;
   text_chunk: string;
+  page?: number;
 };
 
 type Props = {
@@ -40,6 +42,7 @@ const Answer = ({ answer, sources: originalSources, onClose }: Props) => {
         vector_score: source.value.vector_score,
         filename: source.value.filename,
         text_chunk: source.value.text_chunk,
+        page: source.value.page,
       };
     });
     // default sort by vector score
@@ -108,7 +111,7 @@ const Answer = ({ answer, sources: originalSources, onClose }: Props) => {
     // TODO: Do this with embeded iframe and modal and directly show the page
     return (
       <a
-        href={`/api/v1/file/${filename}#page=1`}
+        href={`/api/v1/file/${filename}#page=${row?.page || 1}`}
         target="_blank"
         rel="noreferrer"
         className="ap-link"
@@ -124,7 +127,9 @@ const Answer = ({ answer, sources: originalSources, onClose }: Props) => {
       const regex = new RegExp(`\\[${source.filename}\\]`, "g");
       answerCopy = answerCopy.replace(
         regex,
-        `(<a href="/api/v1/file/${source.filename}#page=1" target="_blank" class="ap-link">${source.filename}</a>)`
+        `(<a href="/api/v1/file/${source.filename}#page=${
+          source?.page || 1
+        }" target="_blank" class="ap-link">${source.filename}</a>)`
       );
     });
     answerCopy = answerCopy.replace(/^\n|\n$/g, "");

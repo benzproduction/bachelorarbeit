@@ -75,7 +75,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           size: topK,
         },
         DIALECT: 2,
-        RETURN: ["vector_score", "filename", "text_chunk", "text_chunk_index"],
+        RETURN: [
+          "vector_score",
+          "filename",
+          "text_chunk",
+          "text_chunk_index",
+          "page",
+        ],
       }
     );
 

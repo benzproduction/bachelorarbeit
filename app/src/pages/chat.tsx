@@ -5,7 +5,7 @@ import styles from "../styles/Chat.module.css";
 import Image from "next/image";
 import LoadingDots from "components/Shared/LoadingDots";
 import { Avatar } from "@appkit4/react-components";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import React from "react";
 
 export type Message = {
@@ -127,7 +127,7 @@ const ChatPage: NextPage = () => {
     if (matches) {
       matches.forEach((match) => {
         const filename = match.replace("[", "").replace("]", "");
-        const link = `(<a href="/api/v1/file/${filename}#page=1" target="_blank" class="ap-link">${filename}</a>)`;
+        const link = `(<a href="/api/v1/file/${filename}" target="_blank" class="ap-link">${filename}</a>)`;
         answer = answer.replace(match, link);
       });
     }
@@ -149,11 +149,17 @@ const ChatPage: NextPage = () => {
                 let icon;
                 let className;
                 if (message.type === "apiMessage") {
-                  icon = (<div className="mr-4"><Avatar label="AI" compact /></div>);
+                  icon = (
+                    <div className="mr-4">
+                      <Avatar label="AI" compact />
+                    </div>
+                  );
                   className = styles.apimessage;
                 } else {
                   icon = (
-                    <div className="mr-4"><Avatar label="XX" compact /></div>
+                    <div className="mr-4">
+                      <Avatar label="XX" compact />
+                    </div>
                   );
                   // The latest message sent by the user will be animated while waiting for a response
                   className =
@@ -166,8 +172,11 @@ const ChatPage: NextPage = () => {
                     <div className={className}>
                       {icon}
                       <div className={styles.markdownanswer}>
-                      <p dangerouslySetInnerHTML={{ __html: formatMessage(message.message) }} />
-                          
+                        <p
+                          dangerouslySetInnerHTML={{
+                            __html: formatMessage(message.message),
+                          }}
+                        />
                       </div>
                     </div>
                     {message.sourceDocs && (
