@@ -1,0 +1,4 @@
+csv:
+  class: components.retriever:CSVRetriever
+  args:
+    embeddings_and_text_path: /Users/shuepers001/dev/bachelorarbeit/evaluation/data/chunks.csv

@@ -1,0 +1,10 @@
+baseline:
+  embedding: text_embedding_ada_002
+  language_model: text-davinci-003
+  retriever: csv
+  prompt: baseline
+  run_args:
+    k: 4
+metadata:
+  description: "DB: Redis (KNN-Cosine), Chunk: 300 (Tiktoken), Emb: ada-002, LLM: davinci-003 (OPENAI)"
+  version: "1.0"

@@ -1,0 +1,10 @@
+text-davinci-003:
+  class: components.llms:OpenAICompletionFn
+  args:
+    deployment_name: davinci
+    api_key: ${OPENAI_API_KEY}
+    api_base: ${AZURE_OPENAI_ENDPOINT}
+    extra_options:
+      temperature: 0
+      n: 1
+      max_tokens: 1024
