@@ -37,7 +37,7 @@ def evaluate():
     """Evaluate a model based on a selected configuration and data file."""
 
     # Prompt user to choose the type of evaluation
-    evaluation_types = ['information_retriever', 'answer_generator']
+    evaluation_types = ['information_retriever', 'answer_generator', 'end_to_end']
     evaluation_type_question = [
         inquirer.List('evaluation_type',
                       message="Select the type of evaluation:",
@@ -64,9 +64,9 @@ def evaluate():
             'embedder': embedder,
             'retriever': retriever
         }
-        data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}')
+        data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}') 
 
-    elif evaluation_type == 'answer_generator':
+    elif evaluation_type == 'end_to_end':
         # List model configurations and prompt the user to select one 
         config_dir = Path(cwd + '/evaluation/registry/model_config')
         # Load the YAML files into dictionaries
@@ -108,6 +108,9 @@ def evaluate():
         print(_green("Successfully created run config!"))
 
         data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}')
+    elif evaluation_type == 'answer_generator':
+        exit("Answer generator evaluation not yet implemented")
+
     data_files = [str(f.relative_to(data_dir).with_suffix('')) for f in data_dir.glob('*.jsonl')]
     data_question = [
         inquirer.List('data',
@@ -148,7 +151,7 @@ def evaluate():
     eval_run.run()
     final_report = eval_run.generate_report()
     eval_run.record_final_report(final_report.to_dict())
-    print("\n\n\n"+final_report)
+    print("\n\n\n"+str(final_report))
 
 
 if __name__ == '__main__':

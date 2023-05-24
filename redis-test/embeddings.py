@@ -22,6 +22,7 @@ import PyPDF2
 import textract
 from typing import Dict
 from models import Document, DocumentChunk, DocumentChunkMetadata
+import csv
 
 API_KEY, RESOURCE_ENDPOINT = get_env("azure-openai")
 
@@ -31,7 +32,7 @@ openai.api_base = RESOURCE_ENDPOINT
 openai.api_version = "2022-12-01"
 
 
-pdf_dir = '/Users/shuepers001/dev/bachelorarbeit/data/raw/rest_pdfs'
+pdf_dir = '/Users/shuepers001/dev/bachelorarbeit/data/raw/pdfs2'
 pdf_files = sorted([x for x in os.listdir(pdf_dir) if 'DS_Store' not in x])
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -57,20 +58,20 @@ def create_redis_index(redis_conn:Redis):
     )
     return print(f"Index ({INDEX_NAME}) was created.")
 
-redis_conn = get_redis_connection(password="weak")
-assert redis_conn.ping() == True, "Redis connection not working"
-try:
-    redis_conn.ft(INDEX_NAME).info()
-    print("Index already exists")
-    print(f"Docs in index: {redis_conn.ft(INDEX_NAME).info()['num_docs']}")
-    # exit()
-    # optional extra step: deleting & recreating
-    # print("deleting index...")
-    # redis_conn.ft(INDEX_NAME).dropindex(delete_documents=True)
-    # create_redis_index(redis_conn)
-except Exception as e:
-    create_redis_index(redis_conn)
-    assert redis_conn.ft(INDEX_NAME).info() != None, "Index not created"
+# redis_conn = get_redis_connection(password="weak")
+# assert redis_conn.ping() == True, "Redis connection not working"
+# try:
+#     redis_conn.ft(INDEX_NAME).info()
+#     print("Index already exists")
+#     print(f"Docs in index: {redis_conn.ft(INDEX_NAME).info()['num_docs']}")
+#     # exit()
+#     # optional extra step: deleting & recreating
+#     # print("deleting index...")
+#     # redis_conn.ft(INDEX_NAME).dropindex(delete_documents=True)
+#     # create_redis_index(redis_conn)
+# except Exception as e:
+#     create_redis_index(redis_conn)
+#     assert redis_conn.ft(INDEX_NAME).info() != None, "Index not created"
 
 def pdf_to_text_map(pdf_path):
     # Read the PDF
@@ -80,20 +81,23 @@ def pdf_to_text_map(pdf_path):
         # Iterate through pages
         page_texts = {}
         for i in tqdm(range(len(reader.pages))):
-            # Extract the page
-            page = reader.pages[i]
+            try:
+                # Extract the page
+                page = reader.pages[i]
 
-            # Save the page as a temporary PDF
-            with open("temp.pdf", "wb") as output:
-                writer = PyPDF2.PdfWriter()
-                writer.add_page(page)
-                writer.write(output)
+                # Save the page as a temporary PDF
+                with open("temp.pdf", "wb") as output:
+                    writer = PyPDF2.PdfWriter()
+                    writer.add_page(page)
+                    writer.write(output)
 
-            # Use textract to extract text from the temporary PDF
-            text = textract.process("temp.pdf", method='pdfminer', encoding='utf-8').decode()
+                # Use textract to extract text from the temporary PDF
+                text = textract.process("temp.pdf", method='pdfminer', encoding='utf-8').decode()
 
-            # Store the extracted text
-            page_texts[i] = text
+                # Store the extracted text
+                page_texts[i] = text
+            except:
+                pass
 
             # Remove the temporary PDF
             os.remove("temp.pdf")
@@ -150,7 +154,7 @@ def get_unique_id_for_file_chunk(filename, chunk_index):
     return str(filename+"-!"+str(chunk_index))
 
 
-
+vectors = []
 for pdf_file in pdf_files:
     pdf_path = os.path.join(pdf_dir, pdf_file)
     print("Creating text map for: ", pdf_file)
@@ -166,7 +170,6 @@ for pdf_file in pdf_files:
 
     text_embeddings = list(zip(text_chunks, embeddings))
 
-    vectors = []
     for i, (text_chunk, embedding) in enumerate(text_embeddings):
         id = get_unique_id_for_file_chunk(pdf_file, i)
         metadata = DocumentChunkMetadata(
@@ -180,5 +183,12 @@ for pdf_file in pdf_files:
             metadata=metadata,
         )
         vectors.append(chunk)
-    save_chunks(r=redis_conn, vectors=vectors, index=INDEX_NAME)
-    print(f"Saved {len(vectors)} chunks to index {INDEX_NAME}")
+    #save_chunks(r=redis_conn, vectors=vectors, index=INDEX_NAME)
+    # print(f"Saved {len(vectors)} chunks to index {INDEX_NAME}")
+    # save the vectors to a csv file
+with open("chunks.csv", "w") as f:
+    writer = csv.writer(f)
+    writer.writerow(["key", "text", "embedding", "filename", "page"])
+    for vector in vectors:
+        key=f"{INDEX_NAME}:{vector.id}"
+        writer.writerow([key, vector.text, vector.embedding, vector.metadata.source_filename, vector.metadata.page])

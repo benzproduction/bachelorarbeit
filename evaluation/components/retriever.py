@@ -51,26 +51,42 @@ class CSVRetriever(RetrieverFn):
     
 class RedisRetriever(RetrieverFn):
     def __init__(
-            self, 
-            index: str, 
-            password: str = None, 
-            host: str = 'localhost', 
-            port: str = '6379', 
-            db: int = 0,
-            vector_field_name: str = 'content_vector',
-            **_kwargs: Any
-        ) -> None:
-        self.redisClient = Redis(host=host, port=port, db=db, decode_responses=False, password=password)
-        assert self.redisClient.ping(), "Redis is not connected"
+        self,
+        index: str,
+        password: str = None,
+        host: str = 'localhost',
+        port: str = '6379',
+        db: int = 0,
+        vector_field_name: str = 'content_vector',
+        **_kwargs: Any
+    ) -> None:
         self.index = index
-        assert self.redisClient.ft(index).info()['num_docs'] > 0, "Index is empty"
+        self.password = password
+        self.host = host
+        self.port = port
+        self.db = db
         self.vector_field_name = vector_field_name
+        self.redisClient = None
+
+    def _connect(self) -> None:
+        if self.redisClient is None:
+            self.redisClient = Redis(
+                host=self.host,
+                port=self.port,
+                db=self.db,
+                decode_responses=False,
+                password=self.password
+            )
+            assert self.redisClient.ping(), "Redis is not connected"
+            assert int(self.redisClient.ft(self.index).info()['num_docs']) > 0, "Index is empty"
 
     def __call__(self, query: str, embedder: EmbeddingsFn, k: int = 5, **_kwargs: Any) -> pd.DataFrame:
+        self._connect()
+
         embedded_query = np.array(embedder(query), dtype=np.float32).tobytes()
         q = Query(f'*=>[KNN {k} @{self.vector_field_name } $vec_param AS vector_score]').sort_by('vector_score').paging(0,k).return_fields('vector_score','filename','text_chunk').dialect(2) 
         params_dict = {"vec_param": embedded_query}
-        results = self.redisClient.ft(self.index).search(q, query_params = params_dict)
+        results = self.redisClient.ft(self.index).search(q, query_params=params_dict)
 
         if results.total == 0:
             return pd.DataFrame()
@@ -86,7 +102,7 @@ class RedisRetriever(RetrieverFn):
         result_df = pd.DataFrame(query_result_list)
         result_df.columns = ['id', 'text', 'certainty', 'filename']
         return result_df
-    
+
     def __repr__(self):
         return f"RedisRetriever@{self.index}"
 

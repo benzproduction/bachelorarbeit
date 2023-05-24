@@ -6,7 +6,7 @@ class Source(str, Enum):
     pdf = "pdf"
     docx = "docx"
     txt = "txt"
-    # url = "url"
+    url = "url"
     pptx = "pptx"
 
 

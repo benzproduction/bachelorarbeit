@@ -7,10 +7,10 @@ import textract
 from tqdm import tqdm
 
 
-output_dir = os.path.join(os.path.dirname(__file__), "raw", "real_estate_txts")
+output_dir = os.path.join(os.path.dirname(__file__), "raw", "txt2")
 os.makedirs(output_dir, exist_ok=True)
 
-input_dir = os.path.join(os.path.dirname(__file__), "raw", "real_estate_pdfs")
+input_dir = os.path.join(os.path.dirname(__file__), "raw", "pdfs2")
 
 pdf_files = os.listdir(input_dir)
 

@@ -15,7 +15,7 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 import pandas as pd
 import re
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.metrics import edit_distance
@@ -25,6 +25,9 @@ import yaml
 import os
 import openai
 import string
+import copy
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 logger = logging.getLogger(__name__)
 MIN_FLUSH_EVENTS = 100
@@ -70,7 +73,7 @@ class EvalRun():
         atexit.register(self.flush_events)
         self.event_file_path = log_path
         if log_path is not None:
-            spec = asdict(self.run_spec)
+            spec = asdict(copy.deepcopy(run_spec))
             ignore = {"data"}
             new_spec = {key: value for key,
                         value in spec.items() if key not in ignore}
@@ -182,9 +185,107 @@ class EvalRun():
                 report['final_evaluation'] = 'Poor'
         
         return pd.DataFrame(report, index=[0])
+    
+    def _check_retriever_result(self, result: pd.DataFrame, ideal: Dict[str, str]) -> bool:
+        """
+        Checks if the result of the retriever is correct, but very simple.
+        """
+        paragraphs = ideal.get("paragraph", [])
+        filenames = ideal.get("filename", [])
+        if isinstance(paragraphs, List):
+            paragraphs = " ".join(paragraphs)
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        combined_text = ""
+        # inter the rows of the result and check if the filename is in the ideal filenames
+        for row in result.itertuples():
+            if row.filename in filenames:
+                combined_text += f" {row.text}"
+        text_tokens = self._default_tokenizer.encode(combined_text)
+        paragraphs_tokens = self._default_tokenizer.encode(paragraphs)
+        text_token_set = set(text_tokens)
+        paragraph_token_set = set(paragraphs_tokens)
+        intersection_ratio = len(paragraph_token_set.intersection(text_token_set)) / len(paragraph_token_set)
+        print(_green(f"  Intersection ratio: {intersection_ratio}")) if intersection_ratio >= 0.9 else print(_red(f"  Intersection ratio: {intersection_ratio}"))
+        return intersection_ratio >= 0.9
+    
+    def _fscore_retriever(self, result_ids: List[str], ideal_ids: List[str]) -> np.ndarray:
+        def flatten_nested_list(nested_list: List) -> List:
+            if any(isinstance(item, list) for item in nested_list):
+                flattened_list = []
+                for sublist in nested_list:
+                    if isinstance(sublist, list):
+                        flattened_list.extend(sublist)
+                    else:
+                        flattened_list.append(sublist)
+                return flattened_list
+            else:
+                return nested_list
+        
+        returned_set = set(flatten_nested_list(result_ids))
+        ideal_set = set(flatten_nested_list(ideal_ids))
+        true_positives = len(ideal_set.intersection(returned_set))
+        false_positives = len(returned_set.difference(ideal_set))
+        false_negatives = len(ideal_set.difference(returned_set))
+        precision = true_positives / (true_positives + false_positives)
+        recall = true_positives / (true_positives + false_negatives)
+        try:
+            fscore = 2 * (precision * recall) / (precision + recall)
+            print(_green(f"  F1 score: {fscore}")) if fscore > 0.5 else print(_red(f"  F1 score: {fscore}"))
+            return 2 * (precision * recall) / (precision + recall)
+        except ZeroDivisionError:
+            print(_red("  F1 score: 0.0"))
+            return 0.0
+    
+    def _precision_at_k(self, result_ids: List[str], ideal_ids: List[str], k: int = 5) -> float:
+        def flatten_nested_list(nested_list: List) -> List:
+            if any(isinstance(item, list) for item in nested_list):
+                flattened_list = []
+                for sublist in nested_list:
+                    if isinstance(sublist, list):
+                        flattened_list.extend(sublist)
+                    else:
+                        flattened_list.append(sublist)
+                return flattened_list
+            else:
+                return nested_list
+        
+        result_ids = flatten_nested_list(result_ids)
+        if len(result_ids) < k:
+            print(_red(f"  Precision@{k}: 0.0"))
+            return 0.0
+        else:
+            pAtk = len(set(result_ids[:k]).intersection(set(ideal_ids))) / k
+            print(_green(f"  Precision@{k}: {pAtk}")) if pAtk > 0.5 else print(_red(f"  Precision@{k}: {pAtk}"))
+            return pAtk
+
+
+    def _compute_matthew_corr(self, confusion_matrix: np.ndarray) -> float:
+        assert confusion_matrix.shape == (2, 3), f"Got shape: {confusion_matrix.shape}"
+        r = confusion_matrix[:, :2]
+        r[:, 0] += confusion_matrix[:, 2]
+        return (r[1, 1] * r[0, 0] - r[1, 0] * r[0, 1]) / np.sqrt(
+            r[1, :].sum() * r[0, :].sum() * r[:, 0].sum() * r[:, 1].sum()
+        )
+    def _compute_precision(self, confusion_matrix: np.ndarray, idx: int = 0) -> float:
+        return confusion_matrix[idx, idx] / confusion_matrix[:, idx].sum()
+    
+    def _compute_recall(self, confusion_matrix: np.ndarray, idx: int = 0) -> float:
+        return confusion_matrix[idx, idx] / confusion_matrix[idx, :].sum()
+    
+    def _compute_f_score(self, confusion_matrix: np.ndarray, idx: int = 0, beta: float = 1.0) -> float:
+        precision = self._compute_precision(confusion_matrix, idx=idx)
+        recall = self._compute_recall(confusion_matrix, idx=idx)
+        return (1 + beta**2) * (precision * recall) / (beta**2 * precision + recall)
+    
+    def _compute_averaged_f_score(self, confusion_matrix: np.ndarray, average: str = "macro", beta: float = 1.0) -> float:
+        assert average in ["macro"]
+        f_scores = []
+        for i in range(confusion_matrix.shape[0]):
+            f_scores.append(self._compute_f_score(confusion_matrix, idx=i, beta=beta))
+        return np.array(f_scores).mean()
 
     def _normalize_completion(self, completion: str) -> str:
-        completion = completion.replace("\n", " ").replace("\t", " ")
         completion = re.sub(r"\s+", " ", completion)
         completion = re.sub(r'\[[^\]]+\]', '', completion)
         completion = re.sub(r'(\d+),(\d+)', r'\1.\2', completion) # make sure percent numbers are displayed with a dot
@@ -330,7 +431,7 @@ class EvalRun():
             data = self.run_spec.data
             assert data is not None, "No data provided to run"
 
-        if self.eval_type == "answer_generator":
+        if self.eval_type == "end_to_end":
             for sample, sample_id in data:
                 query = sample["input"][0]["content"]
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
@@ -352,8 +453,22 @@ class EvalRun():
                 # self.record_event("metric", {"meteor_score": meteor_score}, sample_id=sample_id)
         elif self.eval_type == "information_retriever":
             for sample, sample_id in data:
+                assert "input" in sample and "ideal" in sample and "paragraph" in sample["ideal"] and "filename" in sample["ideal"], \
+                    "Incomplete or missing input data"
                 query = sample["input"]
+                ideal = sample["ideal"] 
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
-                result = self.run_spec.run_config["retriever"](query=query, **self.run_spec.run_config)
-                print(result)
+                result: pd.DataFrame = self.run_spec.run_config["retriever"](query=query, **self.run_spec.run_config)
+                assert "text" in result.columns and "filename" in result.columns, "Incomplete or missing result data"
+                self.record_event("result", result[["text", "filename"]].to_dict(orient="records"), sample_id=sample_id)
+                # compute metrics
+                correct = self._check_retriever_result(result[["text", "filename"]], ideal)
+                self.record_event("metric", {"correct": correct}, sample_id=sample_id)
+                if "ids" in ideal and "key" in result.columns:
+                    ideal_ids = ideal["ids"]
+                    result_ids = result[['key']].values.tolist()
+                    fscore = self._fscore_retriever(result_ids, ideal_ids)
+                    self.record_event("metric", {"fscore": fscore}, sample_id=sample_id)
+                    precisionAtk = self._precision_at_k(result_ids, ideal_ids)
+                    self.record_event("metric", {"precisionAtk": precisionAtk}, sample_id=sample_id)
 
