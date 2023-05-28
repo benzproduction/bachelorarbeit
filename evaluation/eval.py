@@ -232,20 +232,8 @@ class EvalRun():
         return intersection_ratio >= 0.9
     
     def _fscore_retriever(self, result_ids: List[str], ideal_ids: List[str]) -> float:
-        def flatten_nested_list(nested_list: List) -> List:
-            if any(isinstance(item, list) for item in nested_list):
-                flattened_list = []
-                for sublist in nested_list:
-                    if isinstance(sublist, list):
-                        flattened_list.extend(sublist)
-                    else:
-                        flattened_list.append(sublist)
-                return flattened_list
-            else:
-                return nested_list
-        
-        returned_set = set(flatten_nested_list(result_ids))
-        ideal_set = set(flatten_nested_list(ideal_ids))
+        returned_set = set(result_ids)
+        ideal_set = set(ideal_ids)
         true_positives = len(ideal_set.intersection(returned_set))
         false_positives = len(returned_set.difference(ideal_set))
         false_negatives = len(ideal_set.difference(returned_set))
@@ -260,19 +248,6 @@ class EvalRun():
             return 0.0
     
     def _precision_at_k(self, result_ids: List[str], ideal_ids: List[str], k: int = 5) -> float:
-        def flatten_nested_list(nested_list: List) -> List:
-            if any(isinstance(item, list) for item in nested_list):
-                flattened_list = []
-                for sublist in nested_list:
-                    if isinstance(sublist, list):
-                        flattened_list.extend(sublist)
-                    else:
-                        flattened_list.append(sublist)
-                return flattened_list
-            else:
-                return nested_list
-        
-        result_ids = flatten_nested_list(result_ids)
         if len(result_ids) < k:
             print(_red(f"  Precision@{k}: 0.0"))
             return 0.0
