@@ -27,11 +27,18 @@ import openai
 import string
 import copy
 import numpy as np
-from scipy.optimize import linear_sum_assignment
+import statistics
 
 logger = logging.getLogger(__name__)
 MIN_FLUSH_EVENTS = 100
 MIN_FLUSH_SECONDS = 10
+INVALID_STR = "__invalid__"
+MATCH_FNS = {
+    "include": lambda x, y: float(x in y),
+    "exact": lambda x, y: float(x == y),
+    "endswith": lambda x, y: x.endswith(y),
+    "starts_or_endswith": lambda x, y: x.startswith(y) or x.endswith(y),
+}
 
 def _green(str):
     return f"\033[1;32m{str}\033[0m"
@@ -50,6 +57,7 @@ class Event:
     data: dict
     created_by: Optional[str]
     created_at: str
+    category: Optional[str] = None
 
 
 class EvalRun():
@@ -115,7 +123,7 @@ class EvalRun():
         with self._event_lock:
             return [event for event in self._events if event.type == type]
     
-    def record_event(self, type, data=None, sample_id=None):
+    def record_event(self, type, data=None, sample_id=None, category=None):
         if sample_id is None:
             sample_id = self.current_sample_id()
         if sample_id is None:
@@ -132,6 +140,7 @@ class EvalRun():
                 data=data,
                 created_by=self.run_spec.created_by,
                 created_at=str(datetime.now(timezone.utc)),
+                category=category,
             )
             self._events.append(event)
             if (
@@ -153,42 +162,55 @@ class EvalRun():
         logging.info(
             f"Final report: {final_report}. Logged to {self.event_file_path}")
     
-    def get_metric_avg(self, metric_name: str) -> float:
+    def get_metric_avg(self, metric_name: str, category: Optional[str] = None) -> Optional[float]:
         metric_values = []
         for event in self.get_events("metric"):
-            if event.data is not None and metric_name in event.data.keys():
+            if event.data is not None and metric_name in event.data.keys() and event.category == category:
                 metric_info = event.data[metric_name]
                 if isinstance(metric_info, str):
                     metric_values.append(event.data["info"]["score"])
                 elif isinstance(metric_info, (int, float)):
                     metric_values.append(metric_info)
-        return sum(metric_values) / len(metric_values) if metric_values else None
+        return statistics.mean(metric_values) if len(metric_values) > 0 else None
     
     def generate_report(self) -> pd.DataFrame:
-        report = {}
+        """ Generate a report for the current run.
+        Will generate a matrix of metrics x categories.
+        @Example:
+
+        |            | Metric 1 | Metric 2 | Metric 3 | 
+        |------------|----------|----------|----------| 
+        | Category 1 |    0.5   |   0.6    |    0.7   |
+        | Category 2 |    0.5   |   0.6    |    0.7   |
+        | Overall    |    0.5   |   0.6    |    0.7   |
+        """
+        metric_avgs = {}
+
         metric_names = set()
+        category_names = set()
         for event in self.get_events("metric"):
             if event.data is not None:
                 metric_names.update([key for key in event.data.keys() if key != 'info'])
+            if event.category is not None:
+                category_names.add(event.category)
         
         for metric_name in metric_names:
-            report[metric_name] = self.get_metric_avg(metric_name)
+            for category_name in category_names:
+                avg = self.get_metric_avg(metric_name, category_name)
+                if avg is not None:
+                    if metric_name not in metric_avgs:
+                        metric_avgs[metric_name] = {}
+                    metric_avgs[metric_name][category_name] = avg
         
-        # Adding final evaluation (you may implement your own method for this)
-        avg_score = sum(report.values()) / len(report.values()) if report.values() else None
-        if avg_score is not None:
-            if avg_score > 0.8:
-                report['final_evaluation'] = 'Good'
-            elif avg_score > 0.5:
-                report['final_evaluation'] = 'Average'
-            else:
-                report['final_evaluation'] = 'Poor'
-        
-        return pd.DataFrame(report, index=[0])
+        for metric_name in metric_names:
+            metric_values = [metric_avgs[metric_name].get(category_name, 0) for category_name in category_names]
+            metric_avgs[metric_name]['Overall'] = statistics.mean(metric_values)
+
+        return pd.DataFrame(metric_avgs)
     
     def _check_retriever_result(self, result: pd.DataFrame, ideal: Dict[str, str]) -> bool:
         """
-        Checks if the result of the retriever is correct, but very simple.
+        Checks if the result of the retriever is correct, but very simple. (Checks how many of the ideal sentences are in the result)
         """
         paragraphs = ideal.get("paragraph", [])
         filenames = ideal.get("filename", [])
@@ -209,7 +231,7 @@ class EvalRun():
         print(_green(f"  Intersection ratio: {intersection_ratio}")) if intersection_ratio >= 0.9 else print(_red(f"  Intersection ratio: {intersection_ratio}"))
         return intersection_ratio >= 0.9
     
-    def _fscore_retriever(self, result_ids: List[str], ideal_ids: List[str]) -> np.ndarray:
+    def _fscore_retriever(self, result_ids: List[str], ideal_ids: List[str]) -> float:
         def flatten_nested_list(nested_list: List) -> List:
             if any(isinstance(item, list) for item in nested_list):
                 flattened_list = []
@@ -259,6 +281,34 @@ class EvalRun():
             print(_green(f"  Precision@{k}: {pAtk}")) if pAtk > 0.5 else print(_red(f"  Precision@{k}: {pAtk}"))
             return pAtk
 
+    def _compute_ndcg(self, result_ids: List[str], ideal_ids: List[str]) -> float:
+        """
+        Metric used to evaluate the retrieval of documents.
+
+        While traditionally used for ranking, it can be adapted 
+        by considering all correct documents equally important (i.e., giving them equal 'gain') 
+        and simply calculating the 'discount' based on the position in the list.
+        """
+        relevant_set = set(ideal_ids)
+        dcg = sum([1.0 / (idx+1) if doc_id in relevant_set else 0.0 for idx, doc_id in enumerate(result_ids)])
+        idcg = sum([1.0 / (idx+1) for idx in range(len(ideal_ids))])
+        ndcg = dcg / idcg
+        print(_green(f"  NDCG: {ndcg}")) if ndcg > 0.5 else print(_red(f"  NDCG: {ndcg}"))
+        return ndcg
+
+    def _compute_modified_precision(self, result_ids: List[str], ideal_ids: List[str]) -> float:
+        """
+        Modified precision metric where the number of correctly retrieved documents gets divided by the total number of documents that should have been retrieved, 
+        instead of the total number of retrieved documents. This will give a 1.0 score when the retriever gets all correct documents.
+
+        --> The total number of retrieved documents is not the denominator, instead the total number of relevant documents is the denominator.
+        """
+        retrieved_set = set(result_ids)
+        relevant_set = set(ideal_ids)
+        true_positive = len(relevant_set.intersection(retrieved_set))
+        precision = true_positive / len(relevant_set)
+        print(_green(f"  Modified precision: {precision}")) if precision > 0.5 else print(_red(f"  Modified precision: {precision}"))
+        return precision
 
     def _compute_matthew_corr(self, confusion_matrix: np.ndarray) -> float:
         assert confusion_matrix.shape == (2, 3), f"Got shape: {confusion_matrix.shape}"
@@ -295,6 +345,24 @@ class EvalRun():
         ground_truth = ground_truth.replace("\n", " ").replace("\t", " ")
         ground_truth = re.sub(r'(\d+),(\d+)', r'\1.\2', ground_truth)
         return ground_truth.strip()
+    
+    def _normalize_general(self, s: str) -> str:
+        """Lower text and remove punctuation, articles and extra whitespace."""
+        s = s.lower()
+        exclude = set(string.punctuation)
+        s = "".join(char for char in s if char not in exclude)
+        s = re.sub(r"\b(a|an|the)\b", " ", s)
+        s = " ".join(s.split())
+        return s
+    
+    def _fuzzy_match(self, s1: str, s2: str) -> bool:
+        s1 = self._normalize_general(s1)
+        s2 = self._normalize_general(s2)
+        if s1 == "" or s2 == "":
+            return s1 == s2
+        match = s1 in s2 or s2 in s1
+        print(_green(f"  Fuzzy match: {match}")) if match else print(_red(f"  Fuzzy match: {match}"))
+        return match
         
 
     def _f1_score(self, completion: str, ground_truth: List[str]) -> float:
@@ -338,41 +406,28 @@ class EvalRun():
         bleu_score = bleu(ground_truth, completion)
         print(_green(f"  BLEU score: {bleu_score}")) if bleu_score > 0.5 else print(_red(f"  BLEU score: {bleu_score}"))
         return bleu_score
-
-    def _model_graded_gpt_fact_gpt(self, query: str, completion: str, ground_truth: str) -> Tuple[str, Dict[str, Any]]:
-        """
-            Use Openai GPT to grade the model's completion of the query.
-            Reads in the registry/model_graded/fact.yaml file as config.
-        """
-        INVALID_STR = "__invalid__"
-        MATCH_FNS = {
-            "include": lambda x, y: float(x in y),
-            "exact": lambda x, y: float(x == y),
-            "endswith": lambda x, y: x.endswith(y),
-            "starts_or_endswith": lambda x, y: x.startswith(y) or x.endswith(y),
-        }
-
-        def get_choice(
-            text: str, eval_type: str, match_fn: Union[str, Callable], choice_strings: Iterable[str]
+    
+    def _mg_get_choice(self, text: str, eval_type: str, match_fn: Union[str, Callable], choice_strings: Iterable[str]
         ) -> str:
-            """Clean the answer string to a choice string to one of choice_strings. Return '__invalid__.' if no match."""
-            if isinstance(match_fn, str):
-                match_fn = MATCH_FNS[match_fn]
-            lines = text.strip().split("\n")
-            if eval_type.startswith("cot_classify"):
-                lines = lines[::-1]  # reverse lines
-            for line in lines:
-                line = line.strip()
-                line = "".join(c for c in line if c not in string.punctuation)
-                if not line:
-                    continue
-                for choice in choice_strings:
-                    if match_fn(line, choice):
-                        return choice
-            logging.warn(f"Choices {choice_strings} not parsable for {eval_type}: {text}")
-            return INVALID_STR
-        
-        def get_choice_score(
+        """Clean the answer string to a choice string to one of choice_strings. Return '__invalid__.' if no match."""
+        if isinstance(match_fn, str):
+            match_fn = MATCH_FNS[match_fn]
+        lines = text.strip().split("\n")
+        if eval_type.startswith("cot_classify"):
+            lines = lines[::-1]  # reverse lines
+        for line in lines:
+            line = line.strip()
+            line = "".join(c for c in line if c not in string.punctuation)
+            if not line:
+                continue
+            for choice in choice_strings:
+                if match_fn(line, choice):
+                    return choice
+        logging.warn(f"Choices {choice_strings} not parsable for {eval_type}: {text}")
+        return INVALID_STR
+    
+    def _mg_get_choice_score(
+            self, 
             choice: str,
             choice_strings: Iterable[str],
             choice_scores: Optional[Union[dict[str, float], str]] = None,
@@ -385,7 +440,12 @@ class EvalRun():
             if choice == INVALID_STR:
                 return min(choice_scores.values())
             return choice_scores[choice]
-        
+
+    def _model_graded_gpt_fact_gpt(self, query: str, completion: str, ground_truth: str) -> Tuple[str, Dict[str, Any]]:
+        """
+            Use Openai GPT to grade the model's completion of the query.
+            Reads in the registry/model_graded/fact.yaml file as config.
+        """
         def print_result(result: str, score: float) -> None:
             result.replace("\n", "")
             if score > 0.5:
@@ -416,9 +476,53 @@ class EvalRun():
         eval_type = config["fact"]["eval_type"] if "eval_type" in config else "classify"
         match_fn = config["fact"]["match_fn"] if "match_fn" in config else "starts_or_endswith"
         choice_strings = config["fact"]["choice_strings"]
-        choice = get_choice(result, eval_type, match_fn, choice_strings)
-        score = get_choice_score(choice, choice_strings, config["fact"].get("choice_scores"))
+        choice = self._mg_get_choice(result, eval_type, match_fn, choice_strings)
+        score = self._mg_get_choice_score(choice, choice_strings, config["fact"].get("choice_scores"))
         print_result(result, score)
+        return choice, dict(
+            score=score,
+            sampled=[result],
+            prompt=prompt,
+            invalid_choice=choice == INVALID_STR,
+        )
+
+    def _model_graded_gpt_closedqa(self, question: str, ideal_answer: str, context: str, completion: str) -> Tuple[str, Dict[str, Any]]:
+        """
+            Use Openai GPT to grade the model's completion of the query.
+            Reads in the registry/model_graded/closedqa.yaml file as config.
+        """
+        if isinstance(context, list):
+            if all(isinstance(c, dict) for c in context):
+                context = " ".join(c["text"] for c in context)
+            else:
+                context = " ".join(context)
+        assert isinstance(context, str), f"Context must be a string, not {type(context)}"
+
+        with open(os.path.join(os.path.dirname(__file__), "registry/model_graded/closedqa.yaml")) as f:
+            config = yaml.safe_load(f)
+        prompt = config["closedqa"]["prompt"]
+        prompt = prompt.replace("{input}", question).replace("{completion}", completion).replace("{ideal}", ideal_answer).replace("{context}", context)
+        result = openai.Completion.create(
+            engine="davinci",
+            prompt=prompt,
+            temperature=0,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            max_tokens=1200,
+            n=1,
+            api_key=os.environ["OPENAI_API_KEY"],
+            api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_type="azure",
+            api_version="2022-12-01"
+        )['choices'][0]['text']
+        eval_type = config["closedqa"]["eval_type"] if "eval_type" in config["closedqa"] else "classify"
+        match_fn = config["closedqa"]["match_fn"] if "match_fn" in config["closedqa"] else "starts_or_endswith"
+        choice_strings = config["closedqa"]["choice_strings"]
+        choice = self._mg_get_choice(result, eval_type, match_fn, choice_strings)
+        score = self._mg_get_choice_score(choice, choice_strings, config["closedqa"].get("choice_scores"))
+        # print score, that is either 1.0 or 0.0
+        print(_green(f"  Model graded GPT: {result}") if score > 0.5 else _red(f"  Model graded GPT: {result}"))
         return choice, dict(
             score=score,
             sampled=[result],
@@ -433,42 +537,62 @@ class EvalRun():
 
         if self.eval_type == "end_to_end":
             for sample, sample_id in data:
-                query = sample["input"][0]["content"]
+                query = sample["input"]
+                if isinstance(query, dict) and "question" in query:
+                    query = query["question"]
+                assert isinstance(query, str), f"Query must be a string, not {type(query)}"
+                category = sample["category"] if "category" in sample else "NOT_SPECIFIED"
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
                 ground_truth = [self._normalize_ground_truth(gt) for gt in sample["ideal"]]
                 result = self.run_spec.run_config["llm"](query=query, **self.run_spec.run_config)
                 completion = self._normalize_completion(result.get_completions()[0])
-                self.record_event("completion", {"query": query, "ground_truth": ground_truth, "completion": completion}, sample_id=sample_id)
-                f1_score = self._f1_score(completion, ground_truth)
-                self.record_event("metric", {"f1_score": f1_score}, sample_id=sample_id)
-                vector_similarity = self._vector_similarity(completion, ground_truth)
-                self.record_event("metric", {"vector_similarity": vector_similarity}, sample_id=sample_id)
-                jaccard_similarity = self._jaccard_similarity(completion, ground_truth)
-                self.record_event("metric", {"jaccard_similarity": jaccard_similarity}, sample_id=sample_id)
-                model_graded_fact_gpt, info = self._model_graded_gpt_fact_gpt(query, completion, ground_truth)
-                self.record_event("metric", {"model_graded_fact_gpt": model_graded_fact_gpt, "info": info}, sample_id=sample_id)
-                bleu_score = self._bleu_score(completion, ground_truth)
-                self.record_event("metric", {"bleu_score": bleu_score}, sample_id=sample_id)
-                # meteor_score = self._meteor_score(completion, ground_truth)
-                # self.record_event("metric", {"meteor_score": meteor_score}, sample_id=sample_id)
+                self.record_event("result", {"query": query, "ground_truth": ground_truth, "completion": completion}, sample_id=sample_id, category=category)
+                # compute metrics
+        elif self.eval_type == "answer_generator":
+            for sample, sample_id in data:
+                assert "input" in sample and "ideal" in sample and "sources" in sample["input"] and "answer" in sample["ideal"], \
+                    "Incomplete or missing input data"
+                category = sample["category"] if "category" in sample else "NOT_SPECIFIED"
+                query = sample["input"]
+                if isinstance(query, dict) and "question" in query:
+                    query = query["question"]
+                sources = sample["input"]["sources"]
+                print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
+                result = self.run_spec.run_config["llm"](query=query, sources=sources, **self.run_spec.run_config)
+                result: str = result.get_completions()[0]
+                ideal = sample["ideal"]
+                if isinstance(ideal, dict) and "answer" in ideal:
+                    ideal = ideal["answer"]
+                self.record_event("result", {"query": query, "sources": sources, "completion": result, "ideal": ideal}, sample_id=sample_id, category=category)
+                # compute metrics
+                fuzzy_match = self._fuzzy_match(result, ideal)
+                self.record_event("metric", {"fuzzy_match": fuzzy_match}, sample_id=sample_id, category=category)
+                model_graded_qa_gpt, info = self._model_graded_gpt_closedqa(query, ideal, sources, result)
+                self.record_event("metric", {"model_graded_qa_gpt": model_graded_qa_gpt, "info": info}, sample_id=sample_id, category=category)
+
         elif self.eval_type == "information_retriever":
             for sample, sample_id in data:
                 assert "input" in sample and "ideal" in sample and "paragraph" in sample["ideal"] and "filename" in sample["ideal"], \
                     "Incomplete or missing input data"
+                category = sample["category"] if "category" in sample else "NOT_SPECIFIED"
                 query = sample["input"]
+                if isinstance(query, dict) and "question" in query:
+                    query = query["question"]
                 ideal = sample["ideal"] 
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
                 result: pd.DataFrame = self.run_spec.run_config["retriever"](query=query, **self.run_spec.run_config)
                 assert "text" in result.columns and "filename" in result.columns, "Incomplete or missing result data"
-                self.record_event("result", result[["text", "filename"]].to_dict(orient="records"), sample_id=sample_id)
+                self.record_event("result", result[["text", "filename"]].to_dict(orient="records"), sample_id=sample_id, category=category)
                 # compute metrics
-                correct = self._check_retriever_result(result[["text", "filename"]], ideal)
-                self.record_event("metric", {"correct": correct}, sample_id=sample_id)
                 if "ids" in ideal and "key" in result.columns:
                     ideal_ids = ideal["ids"]
                     result_ids = result[['key']].values.tolist()
-                    fscore = self._fscore_retriever(result_ids, ideal_ids)
-                    self.record_event("metric", {"fscore": fscore}, sample_id=sample_id)
-                    precisionAtk = self._precision_at_k(result_ids, ideal_ids)
-                    self.record_event("metric", {"precisionAtk": precisionAtk}, sample_id=sample_id)
-
+                    if isinstance(result_ids[0], list):
+                        result_ids = [item for sublist in result_ids for item in sublist]
+                    ndcg = self._compute_ndcg(result_ids, ideal_ids)
+                    self.record_event("metric", {"ndcg": ndcg}, sample_id=sample_id, category=category)
+                    precision = self._compute_modified_precision(result_ids, ideal_ids)
+                    self.record_event("metric", {"precision": precision}, sample_id=sample_id, category=category)
+                else: 
+                    correct = self._check_retriever_result(result[["text", "filename"]], ideal)
+                    self.record_event("metric", {"correct": correct}, sample_id=sample_id, category=category)

@@ -64,7 +64,8 @@ def evaluate():
             'embedder': embedder,
             'retriever': retriever
         }
-        data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}') 
+        config_name = retriever_choice
+
 
     elif evaluation_type == 'end_to_end':
         # List model configurations and prompt the user to select one 
@@ -106,11 +107,39 @@ def evaluate():
             **model_config.get('run_args', {})
         }
         print(_green("Successfully created run config!"))
+        config_name = selected_config_name
 
-        data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}')
+
     elif evaluation_type == 'answer_generator':
-        exit("Answer generator evaluation not yet implemented")
-
+        config_dir = Path(cwd + '/evaluation/registry/llm')
+        config_choices = [f"{f.stem}" for f in config_dir.glob('*.yaml')]
+        config_question = [
+            inquirer.List('llm',
+                            message=f"Select a language model to evaluate",
+                            choices=config_choices,
+                            carousel=True)
+        ]
+        llm_choice = inquirer.prompt(config_question)['llm']
+        # user has to select a prompt template
+        prompt_dir = Path(cwd + '/evaluation/registry/prompt')
+        prompt_choices = [f"{f.stem}" for f in prompt_dir.glob('*.yaml')]
+        prompt_question = [
+            inquirer.List('prompt',
+                            message=f"Select a prompt to evaluate",
+                            choices=prompt_choices,
+                            carousel=True)
+        ]
+        prompt_choice = inquirer.prompt(prompt_question)['prompt']
+        registry = Registry()
+        llm = registry.make_llm(llm_choice)
+        prompt = registry.get_prompt(prompt_choice)
+        run_config = {
+            "llm": llm,
+            "prompt_template": prompt,
+        }
+        config_name = llm_choice
+    
+    data_dir = Path(cwd +f'/evaluation/data/{evaluation_type}')
     data_files = [str(f.relative_to(data_dir).with_suffix('')) for f in data_dir.glob('*.jsonl')]
     data_question = [
         inquirer.List('data',
@@ -133,10 +162,6 @@ def evaluate():
     ]
     sample_size = int(inquirer.prompt(sample_question)['sample_size'])
     rand_suffix = base64.b32encode(os.urandom(5)).decode("ascii")
-    try:
-        config_name = selected_config_name
-    except NameError:
-        config_name = retriever_choice
     eval_name = f'{evaluation_type}_{config_name}_{data_file}_{rand_suffix}'
     run_spec = RunSpec(
             eval_name=eval_name,

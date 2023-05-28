@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, List, Union
 from base import CompletionFn, CompletionResult, EmbeddingsFn, RetrieverFn
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -30,17 +30,38 @@ def openai_completion_create_retrying(*args, **kwargs):
         raise openai.error.APIError(result["error"])
     return result
 
-def formatSourcesDF(sources):
+def formatSourcesDF(sources) -> str:
     """
     Helper function for formatting a pandas dataframe into a string for the Prompt.
     """
     if isinstance(sources, pd.DataFrame):
-        assert (
-            "text" in sources.columns and "filename" in sources.columns
-        ), "The df must have columns named 'text' and 'filename'"
+        assert "text" in sources.columns, "If sources are provided as a pandas dataframe, it must have a column named 'text'"
+        assert "filename" in sources.columns or "key" in sources.columns, "If sources are provided as a pandas dataframe, it must have a column named 'filename' or 'key'"
         for i, row in sources.iterrows():
-            sources.loc[i,'text'] = f"{row['filename']}: {row['text']};"
+            if "key" in sources.columns:
+                sources.loc[i,'text'] = f"{row['key']}: {row['text']};"
+            else:
+                sources.loc[i,'text'] = f"{row['filename']}: {row['text']};"
         return sources['text'].str.cat(sep="\n\n")
+    return sources
+
+def formatSourcesList(sources) -> str:
+    """
+    Helper function for formatting a list of dicts into a string for the Prompt.
+    """
+    if isinstance(sources, list):
+        if all(isinstance(source, str) for source in sources):
+            return "\n\n".join(sources)
+        assert all(
+            isinstance(source, dict) and "text" in source and ("key" in source or "filename" in source)
+            for source in sources
+        ), "If sources are provided as a list of dicts, they must have keys 'text' and 'key' or 'filename'"
+        for i, source in enumerate(sources):
+            if "key" in source:
+                sources[i]["text"] = f"{source['key']}: {source['text']};"
+            else:
+                sources[i]["text"] = f"{source['filename']}: {source['text']};"
+        return "\n\n".join([source["text"] for source in sources])
     return sources
 
 @dataclass
@@ -56,7 +77,7 @@ class Prompt(ABC):
         """
 
 class CompletionPrompt(Prompt):
-    def __init__(self, template: str, query: str, sources: list[str]):
+    def __init__(self, template: str, query: str, sources: Union[str, pd.DataFrame, list]):
         assert "{query}" in template, "Prompt template must contain {query}"
         assert "{sources}" in template, "Prompt template must contain {sources}"
         self.template = template
@@ -64,6 +85,10 @@ class CompletionPrompt(Prompt):
         # if sources are provided as a pandas dataframe, format them
         if isinstance(sources, pd.DataFrame):
             sources = formatSourcesDF(sources)
+        if isinstance(sources, list):
+            sources = formatSourcesList(sources)
+        if not isinstance(sources, str):
+            raise ValueError(f"Sources must be a str, list, or pandas dataframe. Got {type(sources)}")
         self.sources = sources
 
     def to_formatted_prompt(self):
@@ -109,14 +134,17 @@ class OpenAICompletionFn(CompletionFn):
 
     def __call__(
         self,
-        embedder: EmbeddingsFn,
-        retriever: RetrieverFn,
-        query: str,
         prompt_template: str,
+        query: str,
+        sources: Optional[Union[str, pd.DataFrame, list]] = None,
+        embedder: Optional[EmbeddingsFn] = None,
+        retriever: Optional[RetrieverFn] = None,
         k: Optional[int] = 5,
         **kwargs,
     ) -> OpenAICompletionResult:
-        sources = retriever(query, embedder, k=k)
+        assert sources or (isinstance(embedder, EmbeddingsFn) and isinstance(retriever, RetrieverFn)), "Either sources must be provided or an embedder and retriever must be provided"
+        if not sources:
+            sources = retriever(query, embedder, k=k)
         prompt = CompletionPrompt(template=prompt_template, query=query, sources=sources)
         result = openai_completion_create_retrying(
             engine=self.deployment_name,

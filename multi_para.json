@@ -1,0 +1,184 @@
+{
+    "questions":[
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!68","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!26"],
+            "question": "Did the number of new units authorized in multifamily buildings and the number of single-family housing starts trend in the same direction in 2022?",
+            "answer": "No",
+            "input_paragraphs": ["As of August, 862,000 apartments were under construction, up 25 percent from a year ago.", "And now both permits and housing starts have been trending down again in 2022."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!68","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!26"],
+            "question": "Is the current demand for larger living spaces caused by the existing tax laws for individual homebuyer?",
+            "answer": "No",
+            "input_paragraphs": ["Two, demand gathered speed and sweep as people sought larger living spaces to balance remote work and household life, and more outdoor living options.", "One reason: existing tax laws are stacked against the individual homebuyer."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!68","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!26"],
+            "question": "Was the constrained construction of new supply a consequence of labor shortages and cautious construction pacing from homebuilders?",
+            "answer": "Yes",
+            "input_paragraphs": ["Three, constrained construction of new supply, and a price run-up on the single-family for-sale front, spilled over into expanded apartment demand.", "Another supply constraint is homebuilders cautious construc- tion pacing, a vestige of the last recession.", "And then labor shortages are compounding the problems."]
+        },    
+        {
+            "ids": ["real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!3", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!71"],
+            "question": "Has the affordability of housing dropped in recent years, affecting both young and mid-career households?",
+            "answer": "Yes",
+            "input_paragraphs": ["Housing affordability has fallen to its lowest level in over 30 years. Prices and rents have soared relative to incomes. Spiraling mortgage rates have pushed the homeownership bar further out of reach for a growing share of households.", "B and C value-add investments suit a growing market of younger and mid-career households stuck in the limbo of scarce supply, high prices, and high interest mortgages that will delay their becoming homeowners."]
+        },
+        {
+            "ids": ["real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!3", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!71"],
+            "question": "Are high prices and high interest mortgages contributing to difficulties for people wanting to become homeowners?",
+            "answer": "Yes",
+            "input_paragraphs": ["Housing affordability has fallen to its lowest level in over 30 years. Prices and rents have soared relative to incomes. Spiraling mortgage rates have pushed the homeownership bar further out of reach for a growing share of households.", "B and C value-add investments suit a growing market of younger and mid-career households stuck in the limbo of scarce supply, high prices, and high interest mortgages that will delay their becoming homeowners."]
+        },
+        {
+            "ids": ["real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!3", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!71"],
+            "question": "Is the market for value-add investments growing, particularly among younger and mid-career households?",
+            "answer": "Yes",
+            "input_paragraphs": ["Housing affordability has fallen to its lowest level in over 30 years. Prices and rents have soared relative to incomes. Spiraling mortgage rates have pushed the homeownership bar further out of reach for a growing share of households.", "B and C value-add investments suit a growing market of younger and mid-career households stuck in the limbo of scarce supply, high prices, and high interest mortgages that will delay their becoming homeowners."]
+        },
+        {
+            "ids": ["real_estate_index:2022-09-21_Immobilienmarkt_Deutschland_2022_2023_EN.pdf-!72", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!27"],
+            "question": "Have the costs of both construction and renovation risen due to issues such as supply chain disruptions?",
+            "answer": "Yes",
+            "input_paragraphs": ["Building in towns and cities was hampered by the fact that the construction industry was working more or less at capacity, by a shortage of skilled workers and of materials, along with the emergence of protests here and there. The cost of reno- vation has risen on a similar scale.", "Construction costs shot up due to supply chain disruptions and are still worrisome. As one housing industry adviser notes, There's a stress index about global supply chains, and those stress indices are all indicating that they're moderating, but they're still at very high levels."]
+        },
+        {
+            "ids": ["real_estate_index:2022-09-21_Immobilienmarkt_Deutschland_2022_2023_EN.pdf-!72", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!27"],
+            "question": "Have difficulties in the construction industry, like a shortage of skilled workers and materials, hampered building efforts?",
+            "answer": "Yes",
+            "input_paragraphs": ["Building in towns and cities was hampered by the fact that the construction industry was working more or less at capacity, by a shortage of skilled workers and of materials, along with the emergence of protests here and there. The cost of reno- vation has risen on a similar scale.", "Construction costs shot up due to supply chain disruptions and are still worrisome. As one housing industry adviser notes, There's a stress index about global supply chains, and those stress indices are all indicating that they're moderating, but they're still at very high levels."]
+        },
+        {
+            "ids": ["real_estate_index:2022-09-21_Immobilienmarkt_Deutschland_2022_2023_EN.pdf-!72", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!27"],
+            "question": "Are concerns over supply chain issues contributing to elevated costs in the housing construction industry?",
+            "answer": "Yes",
+            "input_paragraphs": ["Building in towns and cities was hampered by the fact that the construction industry was working more or less at capacity, by a shortage of skilled workers and of materials, along with the emergence of protests here and there. The cost of reno- vation has risen on a similar scale.", "Construction costs shot up due to supply chain disruptions and are still worrisome. As one housing industry adviser notes, There's a stress index about global supply chains, and those stress indices are all indicating that they're moderating, but they're still at very high levels."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!9","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!10"],
+            "question": "Has the United States property market begun a period of normalization after an extraordinary growth phase, beginning in 2010 and ending in 2022 when the Fed started hiking interest rates?",
+            "answer": "Yes",
+            "input_paragraphs": ["And now, more than two years on, property investors and managers are learning anew that whopping growth and profits eventually fall back to earth—a reversion to the mean, to use finance jargon, or simply normalizing, as numerous industry experts we interviewed put it.", "Indeed, home sales—both new and existing—had an extraordinary 12-year run since bottoming out in the summer of 2010 until the Fed started hiking interest rates in the spring of 2022."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!9","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!10"],
+            "question": "Given the factors that have influenced the real estate market after the COVID lockdown, did the market eventually experience a normalization or a return to the mean, according to industry experts?",
+            "answer": "Yes",
+            "input_paragraphs": ["And now, more than two years on, property investors and managers are learning anew that whopping growth and profits eventually fall back to earth—a reversion to the mean, to use finance jargon, or simply normalizing, as numerous industry experts we interviewed put it.", "Indeed, home Economicnancial issues Interest rates and cost of capital Availability of qualied labor Job and income growth Ination Capital availability Global economic growth Tariffstrade conicts State and local taxes Federal taxes Currency exchange rates Socialpolitical issues Housing costs and availability 4.21 3.51 Geopolitical conicts Political extremism Immigration policy Epidemicspandemics Climate change Statelocal government budgets Income inequality Federal budget decit Higher education costs Diversity and inclusion Threat of terrorism Real estatedevelopment issues Construction labor costs Construction material costs Construction labor availability Land costs Operating costs State and local regulations Tenant leasing and retention costs NIMBYism Infrastructuretransportation Property taxes Environmentalsustainability requirements Risks from extreme weather Health and wellness features Municipal service cuts Health- and safety-related policies Source: Emerging Trends in Real Estate 2023 survey."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!9", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!13"],
+            "question": "Is the increase in capitalization rates and the decrease in returns associated with rising interest rates and cost of capital, as observed in the U.S. property market? ",
+            "answer": "Yes",
+            "input_paragraphs": ["These market reversions will take several forms: prices of most assets are declining as cap rates rise and transaction volumes fall from record levels, while rent gains for others are merely moderating as demand returns to more sustainable levels.", "More than half believe that capitalization rates are heading up next year and returns are coming down, primarily due to rising interest rates and cost of capital, which was the top economic concern voiced in our survey."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!9","real_estate_index:global-real-estate-markets-2023.pdf-!1"],
+            "question": "Despite the successful run of the U.S. commercial property markets after the COVID-19 lockdown, are cap rates and yields now rising in many markets, not just limited to the UK, without fully reflecting higher interest rates yet?",
+            "answer": "Yes",
+            "input_paragraphs": ["Defying just about every prediction voiced during the terrifying and uncertain days of the COVID lockdown that began in March 2020, U. S. commercial property markets actually embarked on a remarkable run.", "We have already started to see cap rates and yields rise in many markets, with the most rapid adjustment taking place in the UK. However, we do not think that prices fully reflect higher interest rates yet."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!9","real_estate_index:Emerging-Trends_USCanada-2023.pdf-!13"],
+            "question": "Given the observations from the finance executive in the national homebuilder company and the survey results on rising interest rates, are both sources in agreement that the markets are normalizing?",
+            "answer": "Yes",
+            "input_paragraphs": ["Housing Set to Cool A finance executive with one national homebuilder told us, Were still selling. Its just not at the pace that it was selling before the last two years, which was a pace that you dont typi- cally see. So, the markets are more normalizing.", "More than half believe that capitalization rates are heading up next year and returns are coming down, primarily due to rising interest rates and cost of capital, which was the top economic concern voiced in our survey. After more than a decade of lower for longer, the Fed is finally normalizing interest rates closer to historical levels."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!34", "real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!12"],
+            "question": "Is it true that the economic growth in China in 2023 is expected to be lower than the historical averages, but the country's recovery is predicted to be on track during the 2023-2025 period, albeit at a slower pace?",
+            "answer": "Yes",
+            "input_paragraphs": ["Economic growth in China in 2023 should be below historical averages,", "During the outlook period, China is expected to recover and follow its growth path but at a slower pace."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!34", "real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!12"],
+            "question": "Is it accurate to say that while the Monetary Authority of Singapore manages monetary policies through the foreign exchange markets, Singapore's economic strength and geopolitical stability are likely to fare slightly better financial conditions than South Korea and Australia?",
+            "answer": "Yes",
+            "input_paragraphs": ["The Monetary Authority of Singapore manages monetary policies through the foreign exchange markets... Financial conditions in Singapore are expected to fare slightly better than those of South Korea and Australia, as Singapore benefits from strong investor appetite due to its relative economic strength and geopolitical stability.", "Singapore's relative attractiveness to Hong Kong is expected to increase... Singapores relative attractiveness to Hong Kong is expec- ted to increase."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!34", "real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!12"],
+            "question": "Is it correct to say that while Japan is facing externally driven challenges, it is expected to maintain stable monetary policies with the Bank of Japan keeping interest rates near zero, thereby ensuring the spread between property yields and the risk-free rate remains intact?",
+            "answer": "Yes",
+            "input_paragraphs": ["In Japan, yield curve control comes at the cost of a weak yen. If the Bank of Japan (BoJ) remains committed to keeping interest rates near zero, currency intervention, such as yen-buying to prevent further depreciation, could be on the table again... most of the challenges Japan is facing are externally driven, while domestic-driven fundamentals remain relatively healthy.", "Higher interest rates are a concern for all Asia-Pacific markets, with the exception of China and Japan. Japan is keeping a lid on interest rate growth and its benchmark 10-year government bond rate remains close to zero. The spread between property yields and the risk-free rate is therefore intact."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!34", "real_estate_index:isa-outlook-2023.pdf-!44"],
+            "question": "Is the Bank of Japan committed to keeping interest rates near zero which can make Japan an attractive diversifier for institutional investors?",
+            "answer": "Yes",
+            "input_paragraphs": ["In Japan, yield curve control comes at the cost of a weak yen. If the Bank of Japan (BoJ) remains committed to keeping interest rates near zero, currency intervention, such as yen-buying to prevent further depreciation, could be on the table again.", "Japan remains an attractive diversifier for institutional investors regional and global real estate portfolios, due to the relative resiliency of its occupier and capital market fundamentals, its stable geopolitical environment and divergent monetary policies."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!34", "real_estate_index:isa-outlook-2023.pdf-!44"],
+            "question": "Does the Bank of Japan's commitment to keeping interest rates near zero lead to a strong yen?",
+            "answer": "No",
+            "input_paragraphs": ["In Japan, yield curve control comes at the cost of a weak yen. If the Bank of Japan (BoJ) remains committed to keeping interest rates near zero, currency intervention, such as yen-buying to prevent further depreciation, could be on the table again.", "Japan remains an attractive diversifier for institutional investors regional and global real estate portfolios, due to the relative resiliency of its occupier and capital market fundamentals, its stable geopolitical environment and divergent monetary policies."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!37", "real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!12"],
+            "question": "Do Asia Pacific real estate markets, being dominated by domestic and intra-regional capital, signify that higher interest rates are a major concern for Japan's real estate yield spread?",
+            "answer": "No",
+            "input_paragraphs": ["In theory, weak currencies offer attractive discounts for cross-regional investors, but Asia Pacific real estate capital markets are traditionally dominated by domestic and intra-regional capital. In this cycle, most of these capital sources should remain well- capitalized with little financial pressure to sell.", "Australia is cementing its status as a safe haven in the region. Singapores relative attractiveness to Hong Kong is expected to increase. Higher interest rates are less of a concern in Japan where the spread between the risk-free rate and real estate yields remains stable."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!37", "real_estate_index:bouwinvest_international-market-outlook_2023-2025-1.pdf-!12"],
+            "question": "Given the stable risk-free rate and real estate yields in Japan and domestic capital dominance in the Asia Pacific region, is Australia seen as a safe haven in the region?",
+            "answer": "Yes",
+            "input_paragraphs": ["In theory, weak currencies offer attractive discounts for cross-regional investors, but Asia Pacific real estate capital markets are traditionally dominated by domestic and intra-regional capital. In this cycle, most of these capital sources should remain well- capitalized with little financial pressure to sell.", "Australia is cementing its status as a safe haven in the region. Singapores relative attractiveness to Hong Kong is expected to increase. Higher interest rates are less of a concern in Japan where the spread between the risk-free rate and real estate yields remains stable."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!10", "real_estate_index:isa-outlook-2023.pdf-!15"],
+            "question": "Are interest rates expected to continue rising indefinitely, impacting real estate values?",
+            "answer": "No",
+            "input_paragraphs": ["Inflation should eventually settle closer to central banks target levels, allowing the longed-for pivot in interest rates.", "The relentless math of higher interest rates will continue to weigh heavily on real estate values, at least until interest rates stabilize as inflation begins to subside."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!21", "real_estate_index:isa-outlook-2023.pdf-!67"],
+            "question": "Considering the information provided, can we conclude that the denominator effect is expected to force all institutional investors to sell their real estate assets?",
+            "answer": "No",
+            "input_paragraphs": ["And while interest rates are increasing, equity and bond prices have been falling, triggering the denominator effect for some institutional investors with asset allocations that must remain in balance.", "Denominator effects and higher borrowing costs will keep a meaningful fraction of core and higher return buyers on the sidelines, especially at the start of 2023."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!16", "real_estate_index:outlook-real-estatet-market-germany-dec-2022.pdf-!10"],
+            "question": "Can we infer that higher debt costs are the only determinant of real estate valuations?",
+            "answer": "No",
+            "input_paragraphs": ["Ultimately, however, valuations are the result of the interaction between higher debt costs and the path of real estate fundamentals, the prospects for which vary widely across sectors and geographies.", "With the normalisation of monetary policy that has now begun, this situation should dissolve and the rise in real estate yields should be flatter than that of the risk-free interest rate."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!20", "real_estate_index:isa-outlook-2023.pdf-!15"],
+            "question": "Will the increase in interest rates cease to impact real estate values as soon as inflation begins to decrease?",
+            "answer": "Yes",
+            "input_paragraphs": ["Says the regional leader of one global firm, Cap rates have gapped out as interest rates went up. And suddenly, things didnt pencil, and that generated broken deals. The cost of financing for real estate and everything else went up dramatically.", "The relentless math of higher interest rates will continue to weigh heavily on real estate values, at least until interest rates stabilize as inflation begins to subside."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!10", "real_estate_index:isa-outlook-2023.pdf-!16"],
+            "question": "Does the current economic robustness in the US, Canada, and Singapore likely support a pivot in interest rates, assuming inflation settles closer to the target levels of central banks?",
+            "answer": "Yes",
+            "input_paragraphs": ["Inflation should eventually settle closer to central banks target levels, allowing the longed-for pivot in interest rates.", "The dominant driver of inflation in the US, Canada and Singapore is that their economies are robust and operating close to full capacity."]
+        },
+        {
+            "ids": ["real_estate_index:outlook-real-estatet-market-germany-dec-2022.pdf-!10", "real_estate_index:Emerging-Trends_USCanada-2023.pdf-!20"],
+            "question": "Can we infer that all-cash buyers gained more prominence in the market during the end of 2022 due to the higher borrowing costs and prime yields being below the cost of debt capital?",
+            "answer": "Yes",
+            "input_paragraphs": ["At the end of the third quarter of 2022, prime yields in all major market segments were below the cost of debt capital.", "This is one of those cash is king situations where borrowing costs are higher, and if you're an all-cash buyer, those probably represent a disproportionate share of the people in the market today."]
+        },
+        {
+            "ids": ["real_estate_index:Emerging-Trends_USCanada-2023.pdf-!21", "real_estate_index:isa-outlook-2023.pdf-!15"],
+            "question": "Can we say that the concern about how long the Fed will keep raising rates is justified considering that these rising rates could negatively impact real estate values?",
+            "answer": "Yes",
+            "input_paragraphs": ["The fundamental issue for many investors is how long the Fed will keep raising rates.", "The relentless math of higher interest rates will continue to weigh heavily on real estate values, at least until interest rates stabilize as inflation begins to subside."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!16", "real_estate_index:isa-outlook-2023.pdf-!67"],
+            "question": "Is it correct to say that both Europe and the US are expected to face challenges in different sectors (energy and office investments respectively) in 2023?",
+            "answer": "Yes",
+            "input_paragraphs": ["Europe faces especially severe challenges stemming from an energy price shock, with ripple effects of unknown global scope.", "Office investments in the US will face significant challenges in 2023 as lenders and core buyers view the sector as particularly risky."]
+        },
+        {
+            "ids": ["real_estate_index:isa-outlook-2023.pdf-!10", "real_estate_index:isa-outlook-2023.pdf-!67"],
+            "question": "Is it correct to conclude that the potential dominance of distressed sales in the US in 2023 is directly related to the ongoing constraints from the virus?",
+            "answer": "No",
+            "input_paragraphs": ["The virus is no longer a major constraint on life in many countries.", "In the US, transaction activity could become dominated by distressed sales later in 2023."]
+        }
+    ]
+}
