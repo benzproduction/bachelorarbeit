@@ -6,6 +6,8 @@ import logging
 import backoff
 import openai
 import pandas as pd
+import string
+import re
 
 @backoff.on_exception(
     wait_gen=backoff.expo,
@@ -39,8 +41,12 @@ def formatSourcesDF(sources) -> str:
         assert "filename" in sources.columns or "key" in sources.columns, "If sources are provided as a pandas dataframe, it must have a column named 'filename' or 'key'"
         for i, row in sources.iterrows():
             if "key" in sources.columns:
+                if row['text'].startswith(f"{row['key']}: "):
+                    continue
                 sources.loc[i,'text'] = f"{row['key']}: {row['text']};"
             else:
+                if row['text'].startswith(f"{row['filename']}: "):
+                    continue
                 sources.loc[i,'text'] = f"{row['filename']}: {row['text']};"
         return sources['text'].str.cat(sep="\n\n")
     return sources
@@ -64,6 +70,21 @@ def formatSourcesList(sources) -> str:
         return "\n\n".join([source["text"] for source in sources])
     return sources
 
+def format_necessary(template: str, allow_missing: bool = False, **kwargs: dict[str, str]) -> str:
+    """Format a template string with only necessary kwargs."""
+    keys = [k[1] for k in string.Formatter().parse(template) if k[1]]
+    if allow_missing:
+        assert (
+            len([k for k in keys if k in kwargs]) > 0
+        ), f"Required: {keys}, got: {sorted(kwargs)}, no inputs are used.\nTemplate:\n{template}"
+        cur_keys = {k: kwargs.get(k, "{" + k + "}") for k in keys}
+    else:
+        assert all(
+            k in kwargs for k in keys
+        ), f"Required: {keys}, got: {sorted(kwargs)}.\nTemplate:\n{template}"
+        cur_keys = {k: kwargs[k] for k in keys}
+    return template.format(**cur_keys)
+
 @dataclass
 class Prompt(ABC):
     """
@@ -82,7 +103,7 @@ class CompletionPrompt(Prompt):
         assert "{sources}" in template, "Prompt template must contain {sources}"
         self.template = template
         self.query = query
-        # if sources are provided as a pandas dataframe, format them
+        # Format sources
         if isinstance(sources, pd.DataFrame):
             sources = formatSourcesDF(sources)
         if isinstance(sources, list):
@@ -92,14 +113,18 @@ class CompletionPrompt(Prompt):
         self.sources = sources
 
     def to_formatted_prompt(self):
-        return self.template.format(query=self.query, sources=self.sources)
+        return format_necessary(self.template, query=self.query, sources=self.sources)
 
 class OpenAIBaseCompletionResult(CompletionResult):
-    def __init__(self, raw_data: Any, prompt: Any):
+    def __init__(self, raw_data: Any, prompt: Any, sources: Optional[Any] = None):
         self.raw_data = raw_data
         self.prompt = prompt
+        self.sources = sources
 
     def get_completions(self) -> list[str]:
+        raise NotImplementedError
+    
+    def get_sources(self) -> Optional[Any]:
         raise NotImplementedError
 
 class OpenAICompletionResult(OpenAIBaseCompletionResult):
@@ -112,6 +137,11 @@ class OpenAICompletionResult(OpenAIBaseCompletionResult):
                 elif "message" in choice:
                     completions.append(choice["message"]["content"])
         return completions
+    
+    def get_sources(self) -> Optional[Any]:
+        if isinstance(self.sources, pd.DataFrame):
+            return formatSourcesDF(self.sources)
+        return self.sources
 
 
 class OpenAICompletionFn(CompletionFn):
@@ -142,7 +172,7 @@ class OpenAICompletionFn(CompletionFn):
         k: Optional[int] = 5,
         **kwargs,
     ) -> OpenAICompletionResult:
-        assert sources or (isinstance(embedder, EmbeddingsFn) and isinstance(retriever, RetrieverFn)), "Either sources must be provided or an embedder and retriever must be provided"
+        assert sources or (isinstance(embedder, EmbeddingsFn) and isinstance(retriever, RetrieverFn)), "Either sources or an embedder and retriever must be provided"
         if not sources:
             sources = retriever(query, embedder, k=k)
         prompt = CompletionPrompt(template=prompt_template, query=query, sources=sources)
@@ -155,7 +185,7 @@ class OpenAICompletionFn(CompletionFn):
             api_version=self.api_version,
             **self.extra_options,
         )
-        result = OpenAICompletionResult(raw_data=result, prompt=prompt)
+        result = OpenAICompletionResult(raw_data=result, prompt=prompt, sources=sources)
         return result
     
     def __repr__(self):

@@ -1,8 +1,8 @@
-baseline:
+revised_prompt:
   embedding: text_embedding_ada_002
   language_model: text-davinci-003
   retriever: redis
-  prompt: baseline
+  prompt: revised2
   run_args:
     k: 4
   retriever_args:
@@ -12,5 +12,5 @@ baseline:
     port: 6379
     vector_field_name: content_vector
 metadata:
-  description: "DB: Redis (KNN-Cosine), Chunk: 300 (Tiktoken), Emb: ada-002, LLM: davinci-003 (OPENAI)"
+  description: "Revised Prompt (Baseline Config)"
   version: "1.0"

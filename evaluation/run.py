@@ -57,12 +57,14 @@ def evaluate():
                             carousel=True)
         ]
         retriever_choice = inquirer.prompt(config_question)['retriever']
+        config = yaml.safe_load(open(config_dir / f"{retriever_choice}.yaml", 'r'))
         registry = Registry()
-        embedder = registry.make_embedding('text_embedding_ada_002') # TODO: Make this configurable
+        embedder = registry.make_embedding(config[retriever_choice].get('embedder', 'text_embedding_ada_002'))
         retriever = registry.make_retriever(retriever_choice)
         run_config = {
             'embedder': embedder,
-            'retriever': retriever
+            'retriever': retriever,
+            **config[retriever_choice].get('run_args', {})
         }
         config_name = retriever_choice
 
@@ -177,6 +179,7 @@ def evaluate():
     final_report = eval_run.generate_report()
     eval_run.record_final_report(final_report.to_dict())
     print("\n\n\n"+str(final_report))
+    eval_run.print_stats()
 
 
 if __name__ == '__main__':

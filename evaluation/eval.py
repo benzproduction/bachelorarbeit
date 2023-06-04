@@ -27,7 +27,12 @@ import openai
 import string
 import copy
 import numpy as np
+from bert_score import score
+import nltk
 import statistics
+import warnings
+
+warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
 MIN_FLUSH_EVENTS = 100
@@ -46,8 +51,13 @@ def _red(str):
     return f"\033[1;31m{str}\033[0m"
 def _yellow(str):
     return f"\033[1;33m{str}\033[0m"
+def _blue(str):
+    return f"\033[1;34m{str}\033[0m"
+def _purple(str):
+    return f"\033[1;35m{str}\033[0m"
+def _bold(str):
+    return f"\033[1m{str}\033[0m"
 
-# class that gets the run specs from the user and actually runs the evaluation
 @dataclass
 class Event:
     run_id: str
@@ -59,7 +69,7 @@ class Event:
     created_at: str
     category: Optional[str] = None
 
-
+# class that gets the run specs from the user and actually runs the evaluation
 class EvalRun():
 
     def __init__(
@@ -71,6 +81,9 @@ class EvalRun():
         self.run_spec = run_spec
         self.eval_type = run_spec.eval_type
         self._events: List[Event] = []
+        self._sample_times = []
+        self._run_start_time = None
+        self._run_end_time = None
         self._last_flush_time = time.time()
         self._flushes_done = 0
         self._written_events = 0
@@ -171,7 +184,7 @@ class EvalRun():
                     metric_values.append(event.data["info"]["score"])
                 elif isinstance(metric_info, (int, float)):
                     metric_values.append(metric_info)
-        return statistics.mean(metric_values) if len(metric_values) > 0 else None
+        return statistics.fmean(metric_values) if len(metric_values) > 0 else None
     
     def generate_report(self) -> pd.DataFrame:
         """ Generate a report for the current run.
@@ -204,9 +217,24 @@ class EvalRun():
         
         for metric_name in metric_names:
             metric_values = [metric_avgs[metric_name].get(category_name, 0) for category_name in category_names]
-            metric_avgs[metric_name]['Overall'] = statistics.mean(metric_values)
+            metric_avgs[metric_name]['Overall'] = statistics.fmean(metric_values)
 
         return pd.DataFrame(metric_avgs)
+    
+    def print_stats(self) -> None:
+        """ Prints the stats of the current run:
+        - Full time of the run
+
+        """
+        total_time = self._run_end_time - self._run_start_time
+        average_time = np.mean(self._sample_times)
+        min_time = np.min(self._sample_times)
+        max_time = np.max(self._sample_times)
+        print(_purple("\n\nRun stats:"))
+        print(_blue("Total time:\t\t\t"), _bold(f"{t(total_time)}"))
+        print(_blue("Average component(s) run time:\t"), _bold(f"{t(average_time)}"))
+        print(_blue("Min component(s) run time:\t"), _bold(f"{t(min_time)}"))
+        print(_blue("Max component(s) run time:\t"), _bold(f"{t(max_time)}"))
     
     def _check_retriever_result(self, result: pd.DataFrame, ideal: Dict[str, str]) -> bool:
         """
@@ -267,7 +295,10 @@ class EvalRun():
         relevant_set = set(ideal_ids)
         dcg = sum([1.0 / (idx+1) if doc_id in relevant_set else 0.0 for idx, doc_id in enumerate(result_ids)])
         idcg = sum([1.0 / (idx+1) for idx in range(len(ideal_ids))])
-        ndcg = dcg / idcg
+        try:
+            ndcg = dcg / idcg
+        except ZeroDivisionError:
+            ndcg = 0.0
         print(_green(f"  NDCG: {ndcg}")) if ndcg > 0.5 else print(_red(f"  NDCG: {ndcg}"))
         return ndcg
 
@@ -281,7 +312,10 @@ class EvalRun():
         retrieved_set = set(result_ids)
         relevant_set = set(ideal_ids)
         true_positive = len(relevant_set.intersection(retrieved_set))
-        precision = true_positive / len(relevant_set)
+        try:
+            precision = true_positive / len(relevant_set)
+        except ZeroDivisionError:
+            precision = 0.0
         print(_green(f"  Modified precision: {precision}")) if precision > 0.5 else print(_red(f"  Modified precision: {precision}"))
         return precision
 
@@ -292,6 +326,7 @@ class EvalRun():
         return (r[1, 1] * r[0, 0] - r[1, 0] * r[0, 1]) / np.sqrt(
             r[1, :].sum() * r[0, :].sum() * r[:, 0].sum() * r[:, 1].sum()
         )
+    
     def _compute_precision(self, confusion_matrix: np.ndarray, idx: int = 0) -> float:
         return confusion_matrix[idx, idx] / confusion_matrix[:, idx].sum()
     
@@ -338,7 +373,26 @@ class EvalRun():
         match = s1 in s2 or s2 in s1
         print(_green(f"  Fuzzy match: {match}")) if match else print(_red(f"  Fuzzy match: {match}"))
         return match
-        
+
+    def _get_bert_scores(self, generated_sentences: List[str], reference_sentences: List[str]) -> np.ndarray:
+        matrix = np.zeros((len(reference_sentences), len(generated_sentences)))
+        for i, ref in enumerate(reference_sentences):
+            for j, gen in enumerate(generated_sentences):
+                _, _, F1 = score([gen], [ref], lang='en')
+                matrix[i, j] = F1.numpy().mean()
+        return matrix
+    
+    def _evaluate_bert(self, generated: str, reference_sentences: List[str]) -> Tuple[float, float]:
+        generated_sentences = nltk.sent_tokenize(generated)
+        bert_scores = self._get_bert_scores(generated_sentences, reference_sentences)
+        max_scores = np.max(bert_scores, axis=1)
+        # for i, score in enumerate(max_scores):
+        #     print(f"Max BERTScore for reference sentence {i+1}: ", score)
+        average_score = np.mean(max_scores)
+        print(_green(f"  Average BERTScore: {average_score}")) if average_score > 0.85 else print(_red(f"  Average BERTScore: {average_score}"))
+        minimum_score = np.min(max_scores) # its important that every relevant sentence gets a high score
+        print(_green(f"  Minimum BERTScore: {minimum_score}")) if minimum_score > 0.85 else print(_red(f"  Minimum BERTScore: {minimum_score}"))
+        return average_score, minimum_score
 
     def _f1_score(self, completion: str, ground_truth: List[str]) -> float:
         ground_truth_combined = " ".join([gt.lower() for gt in ground_truth])
@@ -469,7 +523,7 @@ class EvalRun():
         if isinstance(context, list):
             if all(isinstance(c, dict) for c in context):
                 context = " ".join(c["text"] for c in context)
-            else:
+            elif all(isinstance(c, str) for c in context):
                 context = " ".join(context)
         assert isinstance(context, str), f"Context must be a string, not {type(context)}"
 
@@ -477,6 +531,8 @@ class EvalRun():
             config = yaml.safe_load(f)
         prompt = config["closedqa"]["prompt"]
         prompt = prompt.replace("{input}", question).replace("{completion}", completion).replace("{ideal}", ideal_answer).replace("{context}", context)
+        n_ctx = 4097
+        prompt_tokens = len(self._default_tokenizer.encode(prompt)) + 100
         result = openai.Completion.create(
             engine="davinci",
             prompt=prompt,
@@ -484,7 +540,7 @@ class EvalRun():
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-            max_tokens=1200,
+            max_tokens=n_ctx - prompt_tokens,
             n=1,
             api_key=os.environ["OPENAI_API_KEY"],
             api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
@@ -510,6 +566,8 @@ class EvalRun():
             data = self.run_spec.data
             assert data is not None, "No data provided to run"
 
+        self._run_start_time = time.time()
+
         if self.eval_type == "end_to_end":
             for sample, sample_id in data:
                 query = sample["input"]
@@ -518,11 +576,21 @@ class EvalRun():
                 assert isinstance(query, str), f"Query must be a string, not {type(query)}"
                 category = sample["category"] if "category" in sample else "NOT_SPECIFIED"
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
-                ground_truth = [self._normalize_ground_truth(gt) for gt in sample["ideal"]]
+                ideal = sample["ideal"]
+                if isinstance(ideal, dict) and "answer" in ideal:
+                    ideal = ideal["answer"]
+                s = time.time()
                 result = self.run_spec.run_config["llm"](query=query, **self.run_spec.run_config)
+                self._sample_times.append(time.time() - s)
                 completion = self._normalize_completion(result.get_completions()[0])
-                self.record_event("result", {"query": query, "ground_truth": ground_truth, "completion": completion}, sample_id=sample_id, category=category)
+                self.record_event("result", {"query": query, "ground_truth": ideal, "completion": completion}, sample_id=sample_id, category=category)
                 # compute metrics
+                fuzzy_match = self._fuzzy_match(completion, ideal)
+                self.record_event("metric", {"fuzzy_match": fuzzy_match}, sample_id=sample_id, category=category)
+                model_graded_qa_gpt, info = self._model_graded_gpt_closedqa(query, ideal, result.get_sources(), completion)
+                self.record_event("metric", {"model_graded_qa_gpt": model_graded_qa_gpt, "info": info}, sample_id=sample_id, category=category)
+                self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
+
         elif self.eval_type == "answer_generator":
             for sample, sample_id in data:
                 assert "input" in sample and "ideal" in sample and "sources" in sample["input"] and "answer" in sample["ideal"], \
@@ -533,7 +601,9 @@ class EvalRun():
                     query = query["question"]
                 sources = sample["input"]["sources"]
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
+                s = time.time()
                 result = self.run_spec.run_config["llm"](query=query, sources=sources, **self.run_spec.run_config)
+                self._sample_times.append(time.time() - s)
                 result: str = result.get_completions()[0]
                 ideal = sample["ideal"]
                 if isinstance(ideal, dict) and "answer" in ideal:
@@ -544,18 +614,26 @@ class EvalRun():
                 self.record_event("metric", {"fuzzy_match": fuzzy_match}, sample_id=sample_id, category=category)
                 model_graded_qa_gpt, info = self._model_graded_gpt_closedqa(query, ideal, sources, result)
                 self.record_event("metric", {"model_graded_qa_gpt": model_graded_qa_gpt, "info": info}, sample_id=sample_id, category=category)
+                self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
+                if isinstance(sample["ideal"], dict) and "sentences" in sample["ideal"]:
+                    sentences = sample["ideal"]["sentences"]
+                    avg_bert, min_bert = self._evaluate_bert(result, sentences)
+                    self.record_event("metric", {"avg_bert": avg_bert}, sample_id=sample_id, category=category)
+                    self.record_event("metric", {"min_bert": min_bert}, sample_id=sample_id, category=category)
 
         elif self.eval_type == "information_retriever":
             for sample, sample_id in data:
-                assert "input" in sample and "ideal" in sample and "paragraph" in sample["ideal"] and "filename" in sample["ideal"], \
-                    "Incomplete or missing input data"
+                assert "input" in sample and "ideal" in sample and "paragraph" in sample["ideal"], \
+                        "Incomplete or missing input data"
                 category = sample["category"] if "category" in sample else "NOT_SPECIFIED"
                 query = sample["input"]
                 if isinstance(query, dict) and "question" in query:
                     query = query["question"]
                 ideal = sample["ideal"] 
                 print(_yellow(f"Evaluating sample ({sample_id}): {query}"))
+                s = time.time()
                 result: pd.DataFrame = self.run_spec.run_config["retriever"](query=query, **self.run_spec.run_config)
+                self._sample_times.append(time.time() - s)
                 assert "text" in result.columns and "filename" in result.columns, "Incomplete or missing result data"
                 self.record_event("result", result[["text", "filename"]].to_dict(orient="records"), sample_id=sample_id, category=category)
                 # compute metrics
@@ -571,3 +649,5 @@ class EvalRun():
                 else: 
                     correct = self._check_retriever_result(result[["text", "filename"]], ideal)
                     self.record_event("metric", {"correct": correct}, sample_id=sample_id, category=category)
+
+        self._run_end_time = time.time()

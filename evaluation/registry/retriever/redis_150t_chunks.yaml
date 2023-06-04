@@ -1,8 +1,9 @@
-redis:
+redis_150t_chunks:
   class: components.retriever:RedisRetriever
   args:
-    index: real_estate_index
+    index: index_150t_chunks
     host: localhost
     port: 6379
     vector_field_name: content_vector
-    password: weak
+  run_args:
+    k: 10

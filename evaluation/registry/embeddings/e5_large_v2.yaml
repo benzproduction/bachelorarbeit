@@ -1,0 +1,2 @@
+e5_large_v2:
+  class: components.embeddings:Intfloat_e5_large_v2

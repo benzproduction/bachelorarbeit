@@ -1,8 +1,8 @@
-redis:
+redis_e5_embeddings:
   class: components.retriever:RedisRetriever
   args:
-    index: real_estate_index
+    index: index_e5_embeddings
     host: localhost
     port: 6379
     vector_field_name: content_vector
-    password: weak
+  embedder: e5_large_v2
