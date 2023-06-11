@@ -529,10 +529,16 @@ class EvalRun():
 
         with open(os.path.join(os.path.dirname(__file__), "registry/model_graded/closedqa.yaml")) as f:
             config = yaml.safe_load(f)
-        prompt = config["closedqa"]["prompt"]
-        prompt = prompt.replace("{input}", question).replace("{completion}", completion).replace("{ideal}", ideal_answer).replace("{context}", context)
+        prompt_template = config["closedqa"]["prompt"]
+        prompt = prompt_template.replace("{input}", question).replace("{completion}", completion).replace("{ideal}", ideal_answer).replace("{context}", context)
         n_ctx = 4097
-        prompt_tokens = len(self._default_tokenizer.encode(prompt)) + 100
+        completion_tkn = 250
+        prompt_tokens = len(self._default_tokenizer.encode(prompt)) + completion_tkn
+        if prompt_tokens > n_ctx:
+            diff = prompt_tokens - n_ctx + 10
+            context = self._default_tokenizer.encode(context)
+            context = context[:-diff]
+            prompt = prompt_template.replace("{input}", question).replace("{completion}", completion).replace("{ideal}", ideal_answer).replace("{context}", self._default_tokenizer.decode(context))
         result = openai.Completion.create(
             engine="davinci",
             prompt=prompt,
@@ -540,7 +546,7 @@ class EvalRun():
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-            max_tokens=n_ctx - prompt_tokens,
+            max_tokens=completion_tkn,
             n=1,
             api_key=os.environ["OPENAI_API_KEY"],
             api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
@@ -560,6 +566,12 @@ class EvalRun():
             prompt=prompt,
             invalid_choice=choice == INVALID_STR,
         )
+
+    def _human_graded(self, ideal: str, completion: str) -> bool:
+        print("Completion: ", completion)
+        print("Ideal Answer: ", ideal)
+        correct = input("Is the completion correct? (y/n): ")
+        return correct != "n"
 
     def run(self, data: Optional[List[Tuple[Dict[str, Any], int]]] = None) -> None:
         if data is None:
@@ -589,7 +601,11 @@ class EvalRun():
                 self.record_event("metric", {"fuzzy_match": fuzzy_match}, sample_id=sample_id, category=category)
                 model_graded_qa_gpt, info = self._model_graded_gpt_closedqa(query, ideal, result.get_sources(), completion)
                 self.record_event("metric", {"model_graded_qa_gpt": model_graded_qa_gpt, "info": info}, sample_id=sample_id, category=category)
-                self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
+                if not fuzzy_match:
+                    human_graded_qa = self._human_graded(ideal, completion)
+                    self.record_event("metric", {"correct": human_graded_qa}, sample_id=sample_id, category=category)
+                else:
+                    self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
 
         elif self.eval_type == "answer_generator":
             for sample, sample_id in data:
@@ -614,7 +630,11 @@ class EvalRun():
                 self.record_event("metric", {"fuzzy_match": fuzzy_match}, sample_id=sample_id, category=category)
                 model_graded_qa_gpt, info = self._model_graded_gpt_closedqa(query, ideal, sources, result)
                 self.record_event("metric", {"model_graded_qa_gpt": model_graded_qa_gpt, "info": info}, sample_id=sample_id, category=category)
-                self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
+                if not fuzzy_match:
+                    human_graded_qa = self._human_graded(ideal, result)
+                    self.record_event("metric", {"correct": human_graded_qa}, sample_id=sample_id, category=category)
+                else:
+                    self.record_event("metric", {"correct": fuzzy_match or info["score"] == 1.0}, sample_id=sample_id, category=category)
                 if isinstance(sample["ideal"], dict) and "sentences" in sample["ideal"]:
                     sentences = sample["ideal"]["sentences"]
                     avg_bert, min_bert = self._evaluate_bert(result, sentences)

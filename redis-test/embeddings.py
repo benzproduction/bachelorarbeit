@@ -36,7 +36,7 @@ openai.api_base = RESOURCE_ENDPOINT
 openai.api_version = "2022-12-01"
 
 # "ada" || "e5-large-v2"
-EMBEDDINGS_MODEL = "e5-large-v2"
+EMBEDDINGS_MODEL = "ada"
 
 pdf_dir = '/Users/shuepers001/dev/bachelorarbeit/data/raw/pdfs2'
 pdf_files = sorted([x for x in os.listdir(pdf_dir) if 'DS_Store' not in x])

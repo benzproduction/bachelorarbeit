@@ -6,4 +6,4 @@ redis_150t_chunks:
     port: 6379
     vector_field_name: content_vector
   run_args:
-    k: 10
+    k: 15

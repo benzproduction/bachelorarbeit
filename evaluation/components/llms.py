@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Union
+from typing import Any, Optional, List, Union, Callable, Iterable
 from base import CompletionFn, CompletionResult, EmbeddingsFn, RetrieverFn
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -8,6 +8,14 @@ import openai
 import pandas as pd
 import string
 import re
+
+INVALID_STR = "__invalid__"
+MATCH_FNS = {
+    "include": lambda x, y: float(x in y),
+    "exact": lambda x, y: float(x == y),
+    "endswith": lambda x, y: x.endswith(y),
+    "starts_or_endswith": lambda x, y: x.startswith(y) or x.endswith(y),
+}
 
 @backoff.on_exception(
     wait_gen=backoff.expo,
@@ -187,6 +195,77 @@ class OpenAICompletionFn(CompletionFn):
         )
         result = OpenAICompletionResult(raw_data=result, prompt=prompt, sources=sources)
         return result
+    
+    def __repr__(self):
+        return f"OpenAICompletionFn(deployment_name={self.deployment_name}, extra_options={self.extra_options})"
+    
+class OpenAICompletion2StepFn(CompletionFn):
+    def __init__(
+        self,
+        api_key: str,
+        api_base: str,
+        deployment_name: Optional[str] = "text-davinci-003",
+        api_type: Optional[str] = "azure",
+        api_version: Optional[str] = "2022-12-01",
+        extra_options: Optional[dict] = {},
+        **kwargs,
+    ):
+        self.api_key = api_key
+        self.api_base = api_base
+        self.deployment_name = deployment_name
+        self.api_type = api_type
+        self.api_version = api_version
+        self.extra_options = extra_options
+    
+    def _get_choice(self, text: str, eval_type: str, match_fn: Union[str, Callable], choice_strings: Iterable[str]
+        ) -> str:
+        """Clean the answer string to a choice string to one of choice_strings. Return '__invalid__.' if no match."""
+        if isinstance(match_fn, str):
+            match_fn = MATCH_FNS[match_fn]
+        lines = text.strip().split("\n")
+        if eval_type.startswith("cot_classify"):
+            lines = lines[::-1]  # reverse lines
+        for line in lines:
+            line = line.strip()
+            line = "".join(c for c in line if c not in string.punctuation)
+            if not line:
+                continue
+            for choice in choice_strings:
+                if match_fn(line, choice):
+                    return choice
+        logging.warn(f"Choices {choice_strings} not parsable for {eval_type}: {text}")
+        return INVALID_STR
+
+    def __call__(
+        self,
+        step1_prompt: str,
+        step2_prompt: str,
+        query: str,
+        sources: Optional[Union[str, pd.DataFrame, list]] = None,
+        embedder: Optional[EmbeddingsFn] = None,
+        retriever: Optional[RetrieverFn] = None,
+        k: Optional[int] = 5,
+        **kwargs,
+    ) -> OpenAICompletionResult:
+        assert sources or (isinstance(embedder, EmbeddingsFn) and isinstance(retriever, RetrieverFn)), "Either sources or an embedder and retriever must be provided"
+        if not sources:
+            sources = retriever(query, embedder, k=k)
+        prompt1 = CompletionPrompt(template=step1_prompt, query=query, sources=sources)
+        prompt2 = CompletionPrompt(template=step2_prompt, query=query, sources=sources)
+        # STEP 1 asks the model to check weather the sources are enough to answer the query
+
+        # STEP 2 asks the model to answer the query, but only if step 1 returned true
+        # result = openai_completion_create_retrying(
+        #     engine=self.deployment_name,
+        #     prompt=prompt.to_formatted_prompt(),
+        #     api_key=self.api_key,
+        #     api_base=self.api_base,
+        #     api_type=self.api_type,
+        #     api_version=self.api_version,
+        #     **self.extra_options,
+        # )
+        # result = OpenAICompletionResult(raw_data=result, prompt=prompt, sources=sources)
+        # return result
     
     def __repr__(self):
         return f"OpenAICompletionFn(deployment_name={self.deployment_name}, extra_options={self.extra_options})"

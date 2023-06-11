@@ -1,0 +1,9 @@
+redis_250t_chunks:
+  class: components.retriever:RedisRetriever
+  args:
+    index: index_300t_chunks
+    host: localhost
+    port: 6379
+    vector_field_name: content_vector
+  run_args:
+    k: 11
