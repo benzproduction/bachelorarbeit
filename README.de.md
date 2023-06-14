@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```
 
 ## Verwendung
-Die genaue Verwendung und Funktionen des Systems werden in der detaillierten Dokumentation beschrieben, die auf der Github Page zu finden ist.
+Die genaue Verwendung und Funktionen des Systems werden in der detaillierten Dokumentation beschrieben, die [hier](https://benzproduction.github.io/bachelorarbeit/) zu finden ist.
 
 ## Beitrag
 Obwohl dieses Projekt derzeit keine Beiträge akzeptiert, erstellen Sie bitte ein Issue zur Diskussion, wenn Sie auf Probleme stoßen oder Vorschläge haben.
