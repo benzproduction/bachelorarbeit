@@ -1,6 +1,0 @@
-{
-  "ingress": {
-      "container_port": 3000,
-      "health_url": "/api/healthcheck"
-  }
-}

@@ -1,8 +1,0 @@
-redis:
-  class: components.retriever:RedisRetriever
-  args:
-    index: real_estate_index
-    host: localhost
-    port: 6379
-    vector_field_name: content_vector
-    password: weak

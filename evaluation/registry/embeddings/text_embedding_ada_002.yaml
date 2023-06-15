@@ -1,5 +1,0 @@
-text_embedding_ada_002:
-  class: components.embeddings:OpenAI_Ada002
-  args:
-    api_key: ${OPENAI_API_KEY}
-    api_base: ${AZURE_OPENAI_ENDPOINT}

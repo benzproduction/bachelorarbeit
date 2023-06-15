@@ -1,9 +1,0 @@
-redis_reranked:
-  class: components.retriever:RankedRedisRetriever
-  args:
-    index: real_estate_index
-    host: localhost
-    port: 6379
-    vector_field_name: content_vector
-    password: weak
-    reranking_k: 50

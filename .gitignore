@@ -1,7 +1,0 @@
-.DS_Store
-data/raw
-data/clean
-data/rag
-.env
-__pycache__
-.vscode
