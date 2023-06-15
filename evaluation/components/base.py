@@ -36,7 +36,7 @@ class RetrieverFn(Protocol):
         embedder: EmbeddingsFn, 
         k :int = 5, 
         **kwargs,
-    ) -> list[str]:
+    ) -> pd.DataFrame:
         """
         ARGS
         ====
@@ -47,7 +47,7 @@ class RetrieverFn(Protocol):
 
         RETURNS
         =======
-        The retrieved documents as a list[str].
+        The retrieved documents as a pandas dataframe.
         """
 
 @runtime_checkable

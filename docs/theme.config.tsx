@@ -10,6 +10,11 @@ const config: DocsThemeConfig = {
   footer: {
     text: 'Documentation for Bachelor thesis',
   },
+  useNextSeoProps() {
+    return {
+      titleTemplate: '%s - BA Docs'
+    }
+  }
 }
 
 export default config
