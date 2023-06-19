@@ -2,7 +2,7 @@ import openai
 from openai.embeddings_utils import get_embedding
 import os
 import tiktoken
-from database import load_vectors, get_redis_connection, save_chunks
+from database import get_redis_connection, save_chunks
 from config import TEXT_EMBEDDING_CHUNK_SIZE, INDEX_NAME, VECTOR_FIELD_NAME, PREFIX
 from redis.commands.search.field import (
     TextField,
@@ -38,7 +38,7 @@ openai.api_version = "2022-12-01"
 # "ada" || "e5-large-v2"
 EMBEDDINGS_MODEL = "ada"
 
-pdf_dir = '/Users/shuepers001/dev/bachelorarbeit/data/raw/pdfs2'
+pdf_dir = 'data/raw/pdf'
 pdf_files = sorted([x for x in os.listdir(pdf_dir) if 'DS_Store' not in x])
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -172,15 +172,6 @@ def find_p_num(chunk:str, m: Dict[int, str], t: tiktoken.Encoding) -> int:
     s = {n: len(c.intersection(set(t.encode(txt)))) for n, txt in m.items()}
     return max(s, key=s.get)
 
-def get_col_average_from_list_of_lists(list_of_lists):
-    """Return the average of each column in a list of lists."""
-    if len(list_of_lists) == 1:
-        return list_of_lists[0]
-    else:
-        list_of_lists_array = array(list_of_lists)
-        average_embedding = average(list_of_lists_array, axis=0)
-        return average_embedding.tolist()
-
 
 def get_unique_id_for_file_chunk(filename, chunk_index):
     return str(filename+"-!"+str(chunk_index))
@@ -228,8 +219,6 @@ def embeddings_via_e5_model(text):
 
 vectors = []
 for pdf_file in pdf_files:
-    # if pdf_file != "2022-12-12_ABG_Statements_Hoeller_2022-2023_en.pdf":
-    #     continue
     pdf_path = os.path.join(pdf_dir, pdf_file)
     print("Creating text map for: ", pdf_file)
     page_texts = pdf_to_text_map(pdf_path)

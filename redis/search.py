@@ -26,7 +26,7 @@ st.set_page_config(
     page_icon=":robot:"
 )
 
-st.title('Real Estate Test Documents Search')
+st.title('Real Estate Documents Search')
 st.subheader("Search for any questions about the test documents you have")
 
 prompt = st.text_input("Enter your search here","", key="input")
@@ -50,25 +50,6 @@ The employee is asking: {injected_prompt}
 Sources:{sources}
 <|im_end|>
 '''
-        self_eval_prompt = '''<|im_start|>system \n
-You are an intelligent assistant helping an employee with general questions regarding a for them unknown knowledge base.
-You are given a question and a list of sources. Each source has a name followed by colon and the actual information ending with a semicolon
-You now need to evaluate if the sources provided are sufficient to answer the question. 
-Evalute based on the following criteria:
-- Does the sources contain all aspects of the question?
-- Does the sources contain all relevant information?
-- If you need to compare something, do you have sources for both sides?
-
-Are the sources sufficient to answer the question? Print only the single character "Y" or "N" (without quotes or punctuation) on its own line. At the end, repeat just the letter again by itself on a new line.
-The employee is asking: {injected_prompt}\n
-Sources:
-{sources}
-'''
-## If the sources are not sufficient, say "False" and provide a list of exactly 3 prompts that specifically ask for the missing information.
-## The False answer should be in the format: "False: [prompt1]; [prompt2]; [prompt3];"
-
-# possible additional prompt sentences:
-# For example, if the question is \"What color is the sky?\" and one of the information sources says \"info123: the sky is blue whenever it's not cloudy\", then answer with \"The sky is blue [info123]\". 
 
         # loop over the results and format the result string in the format described above
         for i, row in result_df.iterrows():
@@ -76,26 +57,6 @@ Sources:
         # combine all returned sources into one string
         result_string = result_df['result'].str.cat(sep="\n\n")
 
-        # self_eval_prompt = self_eval_prompt.format(
-        #     injected_prompt=prompt,
-        #     sources=result_string
-        # )
-        # self_eval = openai.Completion.create(
-        #     engine=COMPLETIONS_MODEL,
-        #     prompt=self_eval_prompt,
-        #     temperature=0.5,
-        #     max_tokens=156, 
-        #     n=1, 
-        #     stop=["<|im_end|>", "<|im_start|>"])
-        # self_eval = self_eval['choices'][0]['text']
-        # print(self_eval)
-        
-        # if "N" in self_eval:
-        #     st.write("I don't know the answer to that.")
-
-        # else:
-        #     # inject the prompt and the result string into the summary prompt
-            
         summary_prepped = summary_prompt.format(
                 injected_prompt=prompt,
                 sources=result_string
@@ -113,15 +74,3 @@ Sources:
         
             # Response provided by GPT-3
         st.write(summary['choices'][0]['text'])
-
-            # Header to give the user feedback what input led to the result
-            # st.subheader("Prompt used to generate this output:")
-
-            # # Display the prompt used to generate the result
-            # st.write(summary_prepped)
-
-            # Result string Output
-            #st.write(result_string)
-
-            # Option to display raw table instead of summary from GPT-3
-            #st.table(result_df)
